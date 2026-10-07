@@ -23,7 +23,13 @@ dotnet build SupportHub.slnx
 dotnet test SupportHub.slnx
 ```
 
-Run individual test projects when appropriate:
+All automated tests belong under `tests/` and are organized into these three projects:
+
+- `tests/SupportHub.AppHost.Tests` — Aspire distributed application and AppHost integration tests.
+- `tests/SupportHub.Customers.Api.Tests` — customer API behavior and domain tests.
+- `tests/SupportHub.Tickets.Api.Tests` — ticket API behavior and domain tests.
+
+Run an individual test project when appropriate:
 
 ```bash
 dotnet test tests/SupportHub.AppHost.Tests/SupportHub.AppHost.Tests.csproj
