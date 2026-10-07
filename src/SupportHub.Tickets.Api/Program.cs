@@ -19,7 +19,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapGet("/", () => "Hello World! from Tickets Api");
+app.MapGet("/hello", () => "Hello World! from Tickets Api");
 
 app.MapDefaultEndpoints();
 
