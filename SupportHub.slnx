@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SupportHub.Tickets.Api/SupportHub.Tickets.Api.csproj" />
+    <Project Path="src/SupportHub.Customers.Api/SupportHub.Customers.Api.csproj" />
+    <Project Path="src/SupportHub.AppHost/SupportHub.AppHost.csproj" />
+    <Project Path="src/SupportHub.ServiceDefaults/SupportHub.ServiceDefaults.csproj" />
+    <Project Path="src/SupportHub.Web/SupportHub.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SupportHub.AppHost.Tests/SupportHub.AppHost.Tests.csproj" />
+    <Project Path="tests/SupportHub.Customers.Api.Tests/SupportHub.Customers.Api.Tests.csproj" />
+    <Project Path="tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj" />
+  </Folder>
+</Solution>

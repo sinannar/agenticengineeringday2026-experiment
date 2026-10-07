@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>2d3357a2-12e7-45f4-9d06-0414fb9cb46a</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SupportHub.Tickets.Api\SupportHub.Tickets.Api.csproj" />
+    <ProjectReference Include="..\SupportHub.Customers.Api\SupportHub.Customers.Api.csproj" />
+    <ProjectReference Include="..\SupportHub.Web\SupportHub.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Redis" Version="13.6.0" />
+  </ItemGroup>
+
+</Project>
