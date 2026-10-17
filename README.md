@@ -16,13 +16,28 @@ The application built throughout the experiment is **SupportHub**, a distributed
 
 SupportHub starts intentionally small and evolves through realistic business requirements. Infrastructure and additional services are introduced only when application requirements justify them.
 
-The current solution contains:
+The current solution contains the following application projects:
 
-- `SupportHub.Web` — Blazor frontend for support staff.
-- `SupportHub.Customers.Api` — customer management.
-- `SupportHub.Tickets.Api` — ticket management.
-- `SupportHub.AppHost` — .NET Aspire application composition and orchestration.
-- `SupportHub.ServiceDefaults` — shared service discovery, resilience, health checks, and OpenTelemetry configuration.
+| Project | Purpose |
+| --- | --- |
+| `SupportHub.AppHost` | .NET Aspire orchestration for the distributed application. It defines the PostgreSQL, Redis, Azure Blob Storage (Azurite), Azure Service Bus emulator, and Azure Cosmos DB Linux emulator resources, along with service references, startup dependencies, health checks, and resource configuration. It does not contain business logic. |
+| `SupportHub.ServiceDefaults` | Shared hosting defaults for service discovery, HTTP resilience, health checks, metrics, distributed tracing, and OpenTelemetry. |
+| `SupportHub.Customers.Api` | Owns customer data and customer-related business operations, including customer CRUD, contact information, and support tiers. Customer data is stored in PostgreSQL and is accessed by other services through this API. |
+| `SupportHub.Tickets.Api` | Owns ticket data and the ticket lifecycle, including status, priority, assignment, customer association, attachments, and SLA-related operations. It uses PostgreSQL for transactional data, Azure Blob Storage for attachments, and publishes ticket lifecycle events to Azure Service Bus. |
+| `SupportHub.Activity.Worker` | Asynchronously processes ticket lifecycle events from Azure Service Bus and stores ticket activity and audit history in Cosmos DB. It handles message failures and duplicate events without modifying transactional ticket data. |
+| `SupportHub.Sla.Worker` | Performs scheduled SLA evaluations by identifying tickets approaching deadlines or breaching their SLA. It interacts with the Tickets API rather than accessing its database directly. |
+| `SupportHub.Sla.Console` | Interactive operational CLI exposed through the Aspire Dashboard terminal. It supports health checks, continuous monitoring, customer and ticket queries, sample data generation, and on-demand SLA scans through Aspire service discovery. |
+| `SupportHub.Web` | Blazor Interactive Server frontend for support staff. It provides customer and ticket management, attachments, activity history, SLA visibility, and dashboard views, while accessing backend APIs through service discovery and using Redis caching where appropriate. |
+
+The solution also contains these automated test projects:
+
+| Project | Purpose |
+| --- | --- |
+| `SupportHub.AppHost.Tests` | Aspire distributed application and AppHost integration tests. |
+| `SupportHub.Customers.Api.Tests` | Customer API behavior and domain tests. |
+| `SupportHub.Tickets.Api.Tests` | Ticket API behavior and domain tests. |
+
+These responsibilities describe the intended architectural ownership of each project. Services remain independently deployable, and each service respects the data ownership boundaries of the others.
 
 ## Planned Features
 
