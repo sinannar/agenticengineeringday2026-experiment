@@ -13,6 +13,80 @@
 - Do not introduce JavaScript, TypeScript, or other application-language projects unless explicitly requested.
 - Keep services independently deployable.
 
+## SupportHub Project Responsibilities
+
+The following are planned responsibilities and intended capabilities for each SupportHub project. They describe architectural ownership and should not be read as claims that every capability is already implemented.
+
+### `SupportHub.AppHost`
+
+- Orchestrates the distributed application using .NET Aspire.
+- Manages PostgreSQL, Redis, Azure Blob Storage (Azurite), Azure Service Bus emulator, and Azure Cosmos DB Linux emulator.
+- Defines service references, startup dependencies, health checks, and resource configuration.
+- Does not contain application business logic.
+
+### `SupportHub.ServiceDefaults`
+
+- Provides shared Aspire defaults for service discovery, OpenTelemetry, health checks, and resilience.
+- Keeps common service configuration consistent across application projects.
+
+### `SupportHub.Customers.Api`
+
+- Owns customer data and customer-related business operations.
+- Implements customer CRUD, contact information, and support tiers.
+- Uses PostgreSQL (`customersdb`).
+- Other services must access customer information through its API, not its database.
+
+### `SupportHub.Tickets.Api`
+
+- Owns ticket data and the ticket lifecycle.
+- Implements ticket CRUD, status, priority, assignment, customer association, attachments, and SLA-related ticket operations.
+- Uses PostgreSQL (`ticketsdb`) for transactional data.
+- Uses Azure Blob Storage for attachments.
+- Publishes ticket lifecycle events to Azure Service Bus.
+- Does not directly access the Customers database or write audit records to Cosmos DB.
+
+### `SupportHub.Activity.Worker`
+
+- Processes ticket lifecycle events asynchronously.
+- Consumes events from Azure Service Bus (`ticket-events`).
+- Stores ticket activity and audit history in Cosmos DB (`activitydb`).
+- Handles message processing failures and duplicate events appropriately.
+- Does not own or modify transactional ticket data.
+
+### `SupportHub.Sla.Worker`
+
+- Performs scheduled SLA evaluations.
+- Identifies tickets approaching SLA deadlines and tickets that have breached their SLA.
+- Interacts with the Tickets API rather than accessing its database directly.
+- Shares SLA evaluation rules with other application components where appropriate.
+
+### `SupportHub.Sla.Console`
+
+- Provides an interactive operational CLI through the Aspire Dashboard terminal.
+- Supports service health checks, continuous health monitoring, customer and ticket queries, sample data generation, and on-demand SLA scans.
+- Communicates with Customers API and Tickets API through Aspire service discovery.
+- Does not access application databases directly or duplicate business logic.
+- Aspire resource name: `supporthub-cli`.
+
+### `SupportHub.Web`
+
+- Blazor Interactive Server frontend for support staff.
+- Provides customer management, ticket management, attachments, activity history, SLA visibility, and a support dashboard.
+- Communicates with Customers API and Tickets API through HTTP and Aspire service discovery.
+- Uses Redis for caching where appropriate.
+- Does not directly access PostgreSQL, Cosmos DB, or Service Bus.
+
+### Architectural boundaries
+
+- Customers API owns customer data.
+- Tickets API owns ticket data and ticket lifecycle operations.
+- Activity Worker owns asynchronous audit processing.
+- SLA Worker owns scheduled SLA monitoring.
+- Operations Console is an operational client.
+- Blazor Web is the presentation layer.
+- AppHost owns distributed orchestration, not business logic.
+- Each service must respect the data ownership boundaries of other services.
+
 ## Build and test
 
 Run commands from the repository root:
@@ -95,18 +169,12 @@ The current AppHost includes Redis for frontend output caching. Preserve the nam
 - Follow the existing OpenAPI, exception handling, health check, and ServiceDefaults conventions.
 - Add or update tests whenever API behavior changes.
 
-Prefer feature-oriented organization such as:
+Prefer simple feature-oriented organization by domain area. Do not require separate folders for individual CRUD operations; group related Minimal API endpoints, contracts, and behavior under the owning feature. For example:
 
 ```text
 Features/
 ├── Tickets/
-│   ├── Create/
-│   ├── Get/
-│   └── Update/
 └── Customers/
-    ├── Create/
-    ├── Get/
-    └── Update/
 ```
 
 ## Frontend conventions
