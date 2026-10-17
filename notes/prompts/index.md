@@ -2,7 +2,7 @@
 
 ## Purpose
 
-These prompts guide development of SupportHub through six GitHub stacked pull requests. Each file contains four copy/paste prompts for GitHub Copilot CLI. Use them **one stage at a time**, reviewing outputs before continuing.
+These prompts guide development of SupportHub through seven GitHub stacked pull requests. Each file contains four copy/paste prompts for GitHub Copilot CLI. Use them **one stage at a time**, reviewing outputs before continuing.
 
 ## What is HVE Core?
 
@@ -36,6 +36,7 @@ These are prompts for the **existing HVE Core skills**, not definitions of new s
 | 4 | [4-feature-activity.md](4-feature-activity.md) | `feature/activity` | `feature/attachments` |
 | 5 | [5-feature-sla.md](5-feature-sla.md) | `feature/sla` | `feature/activity` |
 | 6 | [6-feature-dashboard.md](6-feature-dashboard.md) | `feature/dashboard` | `feature/sla` |
+| 7 | [7-feature-ui-ux.md](7-feature-ui-ux.md) | `feature/ui-ux` | `feature/dashboard` |
 
 ## How to use each file
 
@@ -48,3 +49,9 @@ These are prompts for the **existing HVE Core skills**, not definitions of new s
 7. Create the next stack layer on top of the completed feature branch.
 
 Keep feature work within its PR. Do not treat a passing build alone as proof of functionality. If tests or emulator validation cannot run, report that explicitly.
+
+## Feature 7: Frontend UX & UI Polish
+
+The final feature improves the usability and visual quality of the completed SupportHub Blazor application. It covers consistent navigation and shared components, customer and ticket workflows, dashboard presentation, activity timelines, SLA indicators, responsive layouts, accessibility, loading/empty/error states, and browser-based regression checks.
+
+Keep feature 6 focused on dashboard functionality, Redis caching, observability, and operational correctness. Reserve broad frontend redesign for feature 7. Preserve existing APIs, data ownership, and business rules; use the repository `playwright-cli` skill where available to inspect the rendered experience.
