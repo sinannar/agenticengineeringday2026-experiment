@@ -1,67 +1,95 @@
-# Support Dashboard & Operational Polish — HVE Core RPI Prompts
+# Support Dashboard and Operational Polish — HVE Core RPI Prompts
 
-**Stacked PR branch:** `feature/dashboard`  
-**Parent branch:** `feature/sla`
+**Branch:** `feature/dashboard`  
+**PR target:** `feature/sla`  
+**Usage:** Invoke each skill separately in GitHub Copilot CLI. Review each stage's output before proceeding.
 
-Run each skill separately in GitHub Copilot CLI. Review its output before proceeding to the next stage. Follow `.github/copilot-instructions.md` and the repository's Aspire Skills. Do not submit a PR without approval.
-
-### /rpi-research
+## /rpi-research
 
 ```markdown
-Research the implementation of **SupportHub Support Dashboard & Operational Polish** for the GitHub stacked PR `feature/dashboard`, based on `feature/sla`.
+Research the implementation of **SupportHub Support Dashboard and Operational Polish** for the stacked PR `feature/dashboard` (parent `feature/sla`).
 
-Read `.github/copilot-instructions.md`, inspect the current branch and completed preceding features, and examine Blazor Web, Customers API, Tickets API, workers, Redis, AppHost integration tests, and existing telemetry.
+Feature: **Support Dashboard and Operational Polish**. Current branch: `feature/dashboard`; PR parent: `feature/sla`.
 
-The feature must support:
-- Build a support dashboard with open ticket counts, status/priority breakdowns, and at-risk/breached SLA metrics.
-- Add Redis caching for justified read-heavy operations, with expiry and invalidation.
-- Keep critical metrics correct after customer/ticket updates.
-- Improve health checks, resilience, structured logging, and OpenTelemetry traces.
-- Validate API, worker, messaging, storage, and UI interactions end to end.
-- Add Aspire integration tests and important Blazor user-journey tests.
-- Avoid unrelated feature expansion.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Use the repository's Aspire Skills to inspect resource wiring, client integrations, service discovery, observability, and test infrastructure.
+Feature requirements:
+- Dashboard metrics: open tickets, status/priority breakdown, at-risk and breached SLAs.
+- Redis caching for justified read-heavy operations with TTL and invalidation rules.
+- Improve resilience, health checks, structured logs and distributed OpenTelemetry traces.
+- Validate full customer-to-ticket-to-attachment-to-audit-to-SLA journeys.
+- Aspire integration tests and browser-level UI verification where practical.
+- Document operational startup, known limitations and verification evidence.
 
-Identify the recommended architecture, dashboard API contracts and query strategy, cache boundaries and invalidation, operational telemetry, failure modes, E2E testing, and acceptance criteria. Document risks, dependencies, and acceptance criteria.
+Inspect affected projects, current Aspire AppHost references, client integrations, existing tests and relevant domain contracts. Identify recommended design, APIs, data model/storage, frontend changes, edge cases, dependencies, implementation risks and test strategy. Capture clear acceptance criteria.
 
-Respect project responsibilities and data ownership. Keep the scope limited to Support Dashboard & Operational Polish.
-
-**Research only. Do not modify application code, implement features, or create pull requests.**
+Research only. Do not modify application code, implement features, or create pull requests.
 ```
 
-### /rpi-plan
+## /rpi-plan
 
 ```markdown
-Create an implementation plan for **SupportHub Support Dashboard & Operational Polish** using the completed research.
+Create a concrete, testable implementation plan for **SupportHub Support Dashboard and Operational Polish** using the completed research artifacts.
 
-Break the work into small, testable steps covering support metrics, dashboard UI, appropriate Redis caching and invalidation, observability improvements, resilience, and automated E2E/integration tests.
+Feature: **Support Dashboard and Operational Polish**. Current branch: `feature/dashboard`; PR parent: `feature/sla`.
 
-Include affected files and projects, architecture boundaries, acceptance criteria, Aspire runtime verification, tests, risks, and rollback considerations.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Keep the scope strictly within `feature/dashboard`. Do not implement code or create a PR.
+Planned scope:
+- Dashboard metrics: open tickets, status/priority breakdown, at-risk and breached SLAs.
+- Redis caching for justified read-heavy operations with TTL and invalidation rules.
+- Improve resilience, health checks, structured logs and distributed OpenTelemetry traces.
+- Validate full customer-to-ticket-to-attachment-to-audit-to-SLA journeys.
+- Aspire integration tests and browser-level UI verification where practical.
+- Document operational startup, known limitations and verification evidence.
+
+Break work into small ordered steps. Identify affected files/projects, contracts, infrastructure client registration, tests, Aspire runtime verification, failure cases, and migration or compatibility considerations where applicable.
+
+Acceptance criteria:
+- Dashboard figures reflect authoritative data.
+- Cache invalidation prevents materially stale critical results.
+- Distributed resources, end-to-end workflows and tests pass.
+
+Plan only. Do not change application code or create a pull request. Present the plan for approval before implementation.
 ```
 
-### /rpi-implement
+## /rpi-implement
 
 ```markdown
-Implement the approved **SupportHub Support Dashboard & Operational Polish** plan on `feature/dashboard`.
+Implement the approved plan for **SupportHub Support Dashboard and Operational Polish** on `feature/dashboard`.
 
-Follow `.github/copilot-instructions.md`, use Aspire Skills where relevant, and implement incrementally. Include support metrics, dashboard UI, appropriate Redis caching and invalidation, observability improvements, resilience, and automated E2E/integration tests.
+Feature: **Support Dashboard and Operational Polish**. Current branch: `feature/dashboard`; PR parent: `feature/sla`.
 
-Run relevant builds and tests, validate affected resources through Aspire, inspect logs and traces, and resolve implementation failures.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Do not implement later features, make unrelated changes, or submit a pull request yet.
+Required scope:
+- Dashboard metrics: open tickets, status/priority breakdown, at-risk and breached SLAs.
+- Redis caching for justified read-heavy operations with TTL and invalidation rules.
+- Improve resilience, health checks, structured logs and distributed OpenTelemetry traces.
+- Validate full customer-to-ticket-to-attachment-to-audit-to-SLA journeys.
+- Aspire integration tests and browser-level UI verification where practical.
+- Document operational startup, known limitations and verification evidence.
+
+Follow the approved research and plan, implement incrementally, and add meaningful automated tests. Use Aspire Skills for service wiring, integration, health checks and runtime diagnosis. Run solution build, relevant tests and Aspire integration verification where available; fix failures within this feature's scope.
+
+Do not implement later features, rename unrelated projects, or submit a pull request. Report changes, tests run and any unverified acceptance criteria.
 ```
 
-### /rpi-review
+## /rpi-review
 
 ```markdown
-Review **SupportHub Support Dashboard & Operational Polish** on `feature/dashboard` against the approved plan and acceptance criteria.
+Review **SupportHub Support Dashboard and Operational Polish** on `feature/dashboard` against the approved research, plan and acceptance criteria.
 
-Check architecture and data ownership boundaries, metric correctness, cache invalidation and staleness, health checks, logs/traces, distributed resilience, end-to-end user journeys, and regression coverage.
+Feature: **Support Dashboard and Operational Polish**. Current branch: `feature/dashboard`; PR parent: `feature/sla`.
 
-Use Aspire Skills to inspect resource health, logs, traces, and distributed behavior. Run the solution build and relevant unit/integration/E2E tests; report anything that could not be verified.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Report findings by severity and clearly state whether the feature is ready for a stacked PR targeting `feature/sla`. Do not submit the PR.
+Acceptance criteria:
+- Dashboard figures reflect authoritative data.
+- Cache invalidation prevents materially stale critical results.
+- Distributed resources, end-to-end workflows and tests pass.
+
+Inspect changes for correctness, service boundaries, validation, security, resilience, observability, and test quality. Run `dotnet build SupportHub.slnx`, relevant `dotnet test` commands, and Aspire runtime/integration checks where available. Examine health, logs and traces; report any checks that cannot be performed.
+
+Report findings ordered by severity, missing coverage, remaining risks, and whether the feature is ready for its stacked PR. Do not submit the PR.
 ```

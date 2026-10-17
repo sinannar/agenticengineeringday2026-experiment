@@ -1,69 +1,95 @@
 # SLA Management — HVE Core RPI Prompts
 
-**Stacked PR branch:** `feature/sla`  
-**Parent branch:** `feature/activity`
+**Branch:** `feature/sla`  
+**PR target:** `feature/activity`  
+**Usage:** Invoke each skill separately in GitHub Copilot CLI. Review each stage's output before proceeding.
 
-Run each skill separately in GitHub Copilot CLI. Review its output before proceeding to the next stage. Follow `.github/copilot-instructions.md` and the repository's Aspire Skills. Do not submit a PR without approval.
-
-### /rpi-research
+## /rpi-research
 
 ```markdown
-Research the implementation of **SupportHub SLA Management** for the GitHub stacked PR `feature/sla`, based on `feature/activity`.
+Research the implementation of **SupportHub SLA Management** for the stacked PR `feature/sla` (parent `feature/activity`).
 
-Read `.github/copilot-instructions.md`, inspect the current branch and completed preceding features, and examine Tickets API, Customers API support-tier contract, SLA Worker, SLA Console, Blazor Web, and test projects.
+Feature: **SLA Management**. Current branch: `feature/sla`; PR parent: `feature/activity`.
 
-The feature must support:
-- Define SLA deadlines based on ticket priority and customer support tier.
-- Calculate at-risk and breached SLA states with testable time handling.
-- Run scheduled SLA evaluations in `SupportHub.Sla.Worker`.
-- Keep Tickets API authoritative for ticket state; the worker must not access `ticketsdb` directly.
-- Expose supported SLA operations through Tickets API.
-- Trigger on-demand scans from `SupportHub.Sla.Console` using Aspire service discovery.
-- Reuse SLA rules between scheduled and on-demand workflows.
-- Display SLA indicators and warnings in Blazor.
-- Add unit tests for deadlines/boundaries and integration tests.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Use the repository's Aspire Skills to inspect resource wiring, client integrations, service discovery, observability, and test infrastructure.
+Feature requirements:
+- Define SLA policy based on ticket priority and customer support tier, including deadlines and at-risk/breached states.
+- Implement deterministic, testable SLA calculations with injectable time.
+- SLA Worker performs scheduled scans through Tickets API, not direct database access.
+- Operations Console (`SupportHub.Sla.Console`, resource `supporthub-cli`) triggers on-demand SLA scans through application APIs.
+- Share evaluation behavior without duplicating domain rules in worker and console.
+- Show SLA status and warnings in Blazor; add unit and integration tests.
 
-Identify the recommended architecture, SLA policy model, time abstraction, API contracts, scan scheduling, shared rule placement, idempotent updates, console interaction, UI, and testing. Document risks, dependencies, and acceptance criteria.
+Inspect affected projects, current Aspire AppHost references, client integrations, existing tests and relevant domain contracts. Identify recommended design, APIs, data model/storage, frontend changes, edge cases, dependencies, implementation risks and test strategy. Capture clear acceptance criteria.
 
-Respect project responsibilities and data ownership. Keep the scope limited to SLA Management.
-
-**Research only. Do not modify application code, implement features, or create pull requests.**
+Research only. Do not modify application code, implement features, or create pull requests.
 ```
 
-### /rpi-plan
+## /rpi-plan
 
 ```markdown
-Create an implementation plan for **SupportHub SLA Management** using the completed research.
+Create a concrete, testable implementation plan for **SupportHub SLA Management** using the completed research artifacts.
 
-Break the work into small, testable steps covering SLA rules and deadline evaluation, Tickets API endpoints, scheduled SLA Worker, console on-demand scans, Blazor SLA indicators, and automated tests.
+Feature: **SLA Management**. Current branch: `feature/sla`; PR parent: `feature/activity`.
 
-Include affected files and projects, architecture boundaries, acceptance criteria, Aspire runtime verification, tests, risks, and rollback considerations.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Keep the scope strictly within `feature/sla`. Do not implement code or create a PR.
+Planned scope:
+- Define SLA policy based on ticket priority and customer support tier, including deadlines and at-risk/breached states.
+- Implement deterministic, testable SLA calculations with injectable time.
+- SLA Worker performs scheduled scans through Tickets API, not direct database access.
+- Operations Console (`SupportHub.Sla.Console`, resource `supporthub-cli`) triggers on-demand SLA scans through application APIs.
+- Share evaluation behavior without duplicating domain rules in worker and console.
+- Show SLA status and warnings in Blazor; add unit and integration tests.
+
+Break work into small ordered steps. Identify affected files/projects, contracts, infrastructure client registration, tests, Aspire runtime verification, failure cases, and migration or compatibility considerations where applicable.
+
+Acceptance criteria:
+- SLA calculations are correct for boundaries and time-dependent scenarios.
+- Scheduled and manual scans behave consistently.
+- Worker and CLI operate through service discovery and are observable in Aspire.
+
+Plan only. Do not change application code or create a pull request. Present the plan for approval before implementation.
 ```
 
-### /rpi-implement
+## /rpi-implement
 
 ```markdown
-Implement the approved **SupportHub SLA Management** plan on `feature/sla`.
+Implement the approved plan for **SupportHub SLA Management** on `feature/sla`.
 
-Follow `.github/copilot-instructions.md`, use Aspire Skills where relevant, and implement incrementally. Include SLA rules and deadline evaluation, Tickets API endpoints, scheduled SLA Worker, console on-demand scans, Blazor SLA indicators, and automated tests.
+Feature: **SLA Management**. Current branch: `feature/sla`; PR parent: `feature/activity`.
 
-Run relevant builds and tests, validate affected resources through Aspire, inspect logs and traces, and resolve implementation failures.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Do not implement later features, make unrelated changes, or submit a pull request yet.
+Required scope:
+- Define SLA policy based on ticket priority and customer support tier, including deadlines and at-risk/breached states.
+- Implement deterministic, testable SLA calculations with injectable time.
+- SLA Worker performs scheduled scans through Tickets API, not direct database access.
+- Operations Console (`SupportHub.Sla.Console`, resource `supporthub-cli`) triggers on-demand SLA scans through application APIs.
+- Share evaluation behavior without duplicating domain rules in worker and console.
+- Show SLA status and warnings in Blazor; add unit and integration tests.
+
+Follow the approved research and plan, implement incrementally, and add meaningful automated tests. Use Aspire Skills for service wiring, integration, health checks and runtime diagnosis. Run solution build, relevant tests and Aspire integration verification where available; fix failures within this feature's scope.
+
+Do not implement later features, rename unrelated projects, or submit a pull request. Report changes, tests run and any unverified acceptance criteria.
 ```
 
-### /rpi-review
+## /rpi-review
 
 ```markdown
-Review **SupportHub SLA Management** on `feature/sla` against the approved plan and acceptance criteria.
+Review **SupportHub SLA Management** on `feature/sla` against the approved research, plan and acceptance criteria.
 
-Check architecture and data ownership boundaries, deadline calculations, boundary/time-zone cases, at-risk and breached classifications, scheduled/on-demand consistency, worker resiliency, console interaction, UI, and tests.
+Feature: **SLA Management**. Current branch: `feature/sla`; PR parent: `feature/activity`.
 
-Use Aspire Skills to inspect resource health, logs, traces, and distributed behavior. Run the solution build and relevant unit/integration/E2E tests; report anything that could not be verified.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Report findings by severity and clearly state whether the feature is ready for a stacked PR targeting `feature/activity`. Do not submit the PR.
+Acceptance criteria:
+- SLA calculations are correct for boundaries and time-dependent scenarios.
+- Scheduled and manual scans behave consistently.
+- Worker and CLI operate through service discovery and are observable in Aspire.
+
+Inspect changes for correctness, service boundaries, validation, security, resilience, observability, and test quality. Run `dotnet build SupportHub.slnx`, relevant `dotnet test` commands, and Aspire runtime/integration checks where available. Examine health, logs and traces; report any checks that cannot be performed.
+
+Report findings ordered by severity, missing coverage, remaining risks, and whether the feature is ready for its stacked PR. Do not submit the PR.
 ```

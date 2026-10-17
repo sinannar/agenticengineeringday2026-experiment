@@ -1,65 +1,95 @@
+# Customer Management — HVE Core RPI Prompts
 
-### /rpi-research
+**Branch:** `feature/customers`  
+**PR target:** `main`  
+**Usage:** Invoke each skill separately in GitHub Copilot CLI. Review each stage's output before proceeding.
+
+## /rpi-research
 
 ```markdown
-Research the implementation of **SupportHub Customer Management** for the first GitHub stacked PR, `feature/customers`.
+Research the implementation of **SupportHub Customer Management** for the stacked PR `feature/customers` (parent `main`).
 
-Read `.github/copilot-instructions.md` and inspect the existing solution, Customers API, Blazor Web, PostgreSQL configuration, Aspire AppHost, and test projects.
+Feature: **Customer Management**. Current branch: `feature/customers`; PR parent: `main`.
 
-The feature must support:
-- Customer creation, retrieval, updates, and deletion.
-- Customer name, email, phone number, and support tier.
-- Customer listing and detail views.
-- Input validation and appropriate HTTP responses.
-- PostgreSQL persistence using EF Core and `customersdb`.
-- Blazor UI for managing customers.
-- Automated API and integration tests.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Use the repository's Aspire Skills to understand existing infrastructure, service discovery, and testing patterns.
+Feature requirements:
+- Customer CRUD: create, retrieve, update, delete.
+- Customer name, email, phone, support tier; validation and meaningful HTTP responses.
+- PostgreSQL `customersdb` via EF Core with migrations.
+- Blazor customer list, details, create, edit and delete workflows.
+- Customers API owns data; Web uses HTTP and Aspire service discovery.
+- Automated API, persistence and Aspire integration tests.
 
-Identify the recommended architecture, API endpoints, data model, validation approach, EF Core migrations, frontend integration, test strategy, dependencies, and implementation risks.
+Inspect affected projects, current Aspire AppHost references, client integrations, existing tests and relevant domain contracts. Identify recommended design, APIs, data model/storage, frontend changes, edge cases, dependencies, implementation risks and test strategy. Capture clear acceptance criteria.
 
-Respect Customers API data ownership. Blazor must access customer data through the API, not PostgreSQL.
-
-**Research only. Do not modify application code, implement features, or create pull requests.** Keep the scope limited to Customer Management.
+Research only. Do not modify application code, implement features, or create pull requests.
 ```
 
-### /rpi-plan
+## /rpi-plan
 
 ```markdown
-Create an implementation plan for SupportHub Customer Management using the completed research.
+Create a concrete, testable implementation plan for **SupportHub Customer Management** using the completed research artifacts.
 
-Break the work into clear, testable steps covering Customers API, PostgreSQL EF Core persistence and migrations, validation, Blazor customer management pages, and automated tests.
+Feature: **Customer Management**. Current branch: `feature/customers`; PR parent: `main`.
 
-Include acceptance criteria, affected files/projects, Aspire runtime verification, and potential risks.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Keep the scope strictly within `feature/customers`. Do not implement code or create a PR.
+Planned scope:
+- Customer CRUD: create, retrieve, update, delete.
+- Customer name, email, phone, support tier; validation and meaningful HTTP responses.
+- PostgreSQL `customersdb` via EF Core with migrations.
+- Blazor customer list, details, create, edit and delete workflows.
+- Customers API owns data; Web uses HTTP and Aspire service discovery.
+- Automated API, persistence and Aspire integration tests.
+
+Break work into small ordered steps. Identify affected files/projects, contracts, infrastructure client registration, tests, Aspire runtime verification, failure cases, and migration or compatibility considerations where applicable.
+
+Acceptance criteria:
+- Customer data survives restarts; migrations apply successfully.
+- Invalid input is rejected with useful errors.
+- UI and API CRUD paths work; tests pass.
+
+Plan only. Do not change application code or create a pull request. Present the plan for approval before implementation.
 ```
 
-### /rpi-implement
+## /rpi-implement
 
 ```markdown
-Implement the approved SupportHub Customer Management plan on `feature/customers`.
+Implement the approved plan for **SupportHub Customer Management** on `feature/customers`.
 
-Follow `.github/copilot-instructions.md`, use Aspire Skills where relevant, and implement the feature incrementally.
+Feature: **Customer Management**. Current branch: `feature/customers`; PR parent: `main`.
 
-Include Customers API CRUD endpoints, EF Core PostgreSQL persistence, migrations, validation, Blazor customer management UI, and automated tests.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Run relevant builds and tests, verify the application through Aspire, and resolve implementation failures.
+Required scope:
+- Customer CRUD: create, retrieve, update, delete.
+- Customer name, email, phone, support tier; validation and meaningful HTTP responses.
+- PostgreSQL `customersdb` via EF Core with migrations.
+- Blazor customer list, details, create, edit and delete workflows.
+- Customers API owns data; Web uses HTTP and Aspire service discovery.
+- Automated API, persistence and Aspire integration tests.
 
-Do not implement ticket management or other future features. Do not submit a pull request yet.
+Follow the approved research and plan, implement incrementally, and add meaningful automated tests. Use Aspire Skills for service wiring, integration, health checks and runtime diagnosis. Run solution build, relevant tests and Aspire integration verification where available; fix failures within this feature's scope.
+
+Do not implement later features, rename unrelated projects, or submit a pull request. Report changes, tests run and any unverified acceptance criteria.
 ```
 
-### /rpi-review
+## /rpi-review
 
 ```markdown
-Review the Customer Management implementation on `feature/customers` against the approved plan and acceptance criteria.
+Review **SupportHub Customer Management** on `feature/customers` against the approved research, plan and acceptance criteria.
 
-Check architecture boundaries, API behavior, validation, PostgreSQL persistence, EF Core migrations, Blazor functionality, test coverage, and error handling.
+Feature: **Customer Management**. Current branch: `feature/customers`; PR parent: `main`.
 
-Use Aspire Skills to inspect runtime health, logs, traces, and integration behavior where available.
+Read `.github/copilot-instructions.md` and relevant existing code before making decisions. Respect service data ownership and use repository-local Aspire Skills for version-specific infrastructure, service discovery and runtime diagnostics. Keep work limited to this feature and do not implement later stack layers.
 
-Run solution build and relevant tests. Identify defects, missing coverage, security issues, and remaining risks.
+Acceptance criteria:
+- Customer data survives restarts; migrations apply successfully.
+- Invalid input is rejected with useful errors.
+- UI and API CRUD paths work; tests pass.
 
-Report findings by severity and clearly state whether the feature is ready for a stacked PR. Do not submit the PR.
+Inspect changes for correctness, service boundaries, validation, security, resilience, observability, and test quality. Run `dotnet build SupportHub.slnx`, relevant `dotnet test` commands, and Aspire runtime/integration checks where available. Examine health, logs and traces; report any checks that cannot be performed.
+
+Report findings ordered by severity, missing coverage, remaining risks, and whether the feature is ready for its stacked PR. Do not submit the PR.
 ```
