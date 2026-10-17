@@ -57,3 +57,4 @@ TestResult.xml
 nunit-*.xml
 
 .playwright-cli/
+cpm-artifacts/
