@@ -12,6 +12,7 @@
 * Bottom line: Implement Customer Management as a bounded vertical slice across the existing Customers API, `customersdb` PostgreSQL resource, API-backed Blazor Web UI, and existing API/Aspire test projects.
 * Why this matters: The repository already wires `customersdb` to `customersapi` and `customersapi` to `webfrontend`; the plan adds the missing domain behavior without introducing new infrastructure or violating service ownership.
 * Planning result: Complete and implementation-ready; three standard critique passes completed with all substantive findings resolved.
+* Implementation result: Complete; all planned customer-management phases and validation gates have passed.
 * Confidence and uncertainty: High confidence in the architecture, resource names, ownership boundary, selected `Standard`/`Premium`/`Enterprise` tier vocabulary, and test seams. Production migration execution remains a downstream deployment decision.
 
 ### What You May Not Know
@@ -64,7 +65,7 @@ flowchart LR
 The existing Aspire graph remains the foundation. The change adds service-owned persistence and contracts, then consumes those contracts from Blazor, and finally proves the vertical slice through focused and distributed tests.
 
 <!-- rpi:phase id=P01 -->
-### [ ] P01: Establish customer persistence and API contract
+### [x] P01: Establish customer persistence and API contract
 
 Goals:
 * Establish a service-owned customer model, PostgreSQL persistence, migrations, validation, and CRUD HTTP behavior so the Customers API is a complete independently testable backend.
@@ -94,7 +95,7 @@ flowchart LR
 Highlighted work: service-owned `CustomerDbContext`, migration, customer contract types, validation, and CRUD endpoint behavior.
 
 <!-- rpi:task id=P01-T01 -->
-#### [ ] P01-T01: Define the customer domain model and persistence mapping
+#### [x] P01-T01: Define the customer domain model and persistence mapping
 
 Goals:
 * Establish a durable customer record with a stable identifier and explicit mapping for name, email, phone number, and support tier.
@@ -119,7 +120,7 @@ Dependencies:
 * None.
 
 <!-- rpi:task id=P01-T02 -->
-#### [ ] P01-T02: Register EF Core with Aspire and create the initial migration
+#### [x] P01-T02: Register EF Core with Aspire and create the initial migration
 
 Goals:
 * Connect the Customers API to the existing `customersdb` resource and create a reproducible schema migration for the customer table.
@@ -146,7 +147,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:task id=P01-T03 -->
-#### [ ] P01-T03: Implement validated CRUD endpoints and API error contracts
+#### [x] P01-T03: Implement validated CRUD endpoints and API error contracts
 
 Goals:
 * Provide the complete customer HTTP surface with explicit contracts, validation, appropriate status codes, and structured errors.
@@ -184,7 +185,7 @@ Dependencies:
 * P01-T01, P01-T02.
 
 <!-- rpi:phase id=P02 -->
-### [ ] P02: Add API-backed Blazor customer management
+### [x] P02: Add API-backed Blazor customer management
 
 Goals:
 * Give support staff complete customer list, detail, create, edit, and delete workflows while keeping all data access behind the Customers API.
@@ -212,7 +213,7 @@ flowchart LR
 Highlighted work: typed client methods, customer routes/components, forms, and explicit UI state handling.
 
 <!-- rpi:task id=P02-T01 -->
-#### [ ] P02-T01: Add typed CustomerApiClient contracts and operations
+#### [x] P02-T01: Add typed CustomerApiClient contracts and operations
 
 Goals:
 * Provide a strongly typed Web boundary for all customer reads and mutations.
@@ -236,7 +237,7 @@ Dependencies:
 * P01-T03.
 
 <!-- rpi:task id=P02-T02 -->
-#### [ ] P02-T02: Add customer list and detail views
+#### [x] P02-T02: Add customer list and detail views
 
 Goals:
 * Let staff browse customers and inspect a selected customer's details through API-backed routes.
@@ -261,7 +262,7 @@ Dependencies:
 * P02-T01.
 
 <!-- rpi:task id=P02-T03 -->
-#### [ ] P02-T03: Add create, edit, and delete workflows
+#### [x] P02-T03: Add create, edit, and delete workflows
 
 Goals:
 * Let staff manage customer records end to end from Blazor while reflecting API validation and response states.
@@ -286,7 +287,7 @@ Dependencies:
 * P02-T01, P02-T02.
 
 <!-- rpi:phase id=P03 -->
-### [ ] P03: Prove behavior with automated tests and Aspire runtime verification
+### [x] P03: Prove behavior with automated tests and Aspire runtime verification
 
 Goals:
 * Demonstrate that customer CRUD, validation, PostgreSQL persistence, service discovery, health ordering, and the completed solution remain reliable.
@@ -315,7 +316,7 @@ flowchart LR
 Highlighted work: focused API tests, real Aspire graph tests, and final build/test/runtime checks.
 
 <!-- rpi:task id=P03-T01 -->
-#### [ ] P03-T01: Add Customers API behavior and validation tests
+#### [x] P03-T01: Add Customers API behavior and validation tests
 
 Goals:
 * Lock down pure customer validation, mapping, and domain behavior with fast, focused tests.
@@ -339,7 +340,7 @@ Dependencies:
 * P01-T03.
 
 <!-- rpi:task id=P03-T02 -->
-#### [ ] P03-T02: Extend Aspire integration tests for CRUD and persistence
+#### [x] P03-T02: Extend Aspire integration tests for CRUD and persistence
 
 Goals:
 * Prove the actual AppHost graph starts healthy and that HTTP operations persist and retrieve customer data through `customersdb`.
@@ -366,7 +367,7 @@ Dependencies:
 * P01-T02, P01-T03.
 
 <!-- rpi:task id=P03-T03 -->
-#### [ ] P03-T03: Run solution validation and Aspire runtime verification
+#### [x] P03-T03: Run solution validation and Aspire runtime verification
 
 Goals:
 * Produce implementation evidence that the planned customer slice builds, tests, starts through Aspire, and has healthy affected resources.
@@ -401,7 +402,7 @@ Dependencies:
 * Include customer listing and detail views in the Blazor UI.
 * Use input validation, appropriate HTTP responses, PostgreSQL persistence through EF Core and `customersdb`, and automated API/integration tests.
 * Preserve Customers API data ownership; Blazor accesses customer data through the API and never PostgreSQL directly.
-* Keep this phase to planning only; do not implement code or create a pull request.
+* Implement the approved plan on `feature/customers`; do not create or submit a pull request.
 * Use the completed research artifact as the primary evidence baseline.
 * Support-tier values are the closed set `Standard`, `Premium`, and `Enterprise`.
 
@@ -419,7 +420,7 @@ Dependencies:
 
 | Field | Record |
 |-------|--------|
-| Planning execution and readiness | Complete; Ready for implementation. Final standard critique passed with no open findings |
+| Planning execution and readiness | Complete; implementation completed. Final standard critique passed with no open findings |
 | Decision participation | user-owned; standalone planning invocation; confirmed direction is applied directly and no unresolved decision currently blocks phase design |
 | Blockers | none |
 | Latest critique | [`../../reviews/plans/2026-10-17/feature-customers-plan-critique-3.md`](../../reviews/plans/2026-10-17/feature-customers-plan-critique-3.md) with Pass |
@@ -428,7 +429,7 @@ Dependencies:
 | Changes-record role | `.copilot-tracking/changes/2026-10-17/feature-customers-changes.md` is implementation evidence |
 | Continuation owner | user |
 | Required gates or confirmations | PC-001, PC-002, and PC-003 resolved; preserve the `feature/customers` boundary during implementation |
-| Next action | Run `/rpi-implement` with the changes-record path shown above |
+| Next action | Optional `/rpi-review` against the completed implementation and validation evidence |
 
 ## Goals
 
@@ -447,7 +448,7 @@ Dependencies:
 * `tests/SupportHub.Customers.Api.Tests`
 * `tests/SupportHub.AppHost.Tests`
 * EF Core migration files owned by the Customers API
-* Source-level verification of existing `src/SupportHub.AppHost/AppHost.cs` wiring; modify AppHost only if implementation evidence shows a required reference is missing
+* Source-level verification of existing `src/SupportHub.AppHost/AppHost.cs` wiring; local/test migration configuration may be added without changing service ownership
 * Aspire runtime verification for `customersapi`, `customersdb`, and `webfrontend`
 
 ### Non-Goals

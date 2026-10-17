@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // ============================================================
@@ -8,8 +11,11 @@ var builder = DistributedApplication.CreateBuilder(args);
 var cache = builder.AddRedis("cache");
 
 // PostgreSQL - transactional databases
-var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume();
+var postgres = builder.AddPostgres("postgres");
+if (!builder.Configuration.GetValue<bool>("SUPPORTHUB_TEST_MODE"))
+{
+    postgres.WithDataVolume();
+}
 
 var customersDb = postgres.AddDatabase("customersdb");
 var ticketsDb = postgres.AddDatabase("ticketsdb");
@@ -42,6 +48,11 @@ var customersapi = builder
     .WithReference(customersDb)
     .WaitFor(customersDb)
     .WithHttpHealthCheck("/health");
+
+if (builder.Environment.IsDevelopment())
+{
+    customersapi.WithEnvironment("SUPPORTHUB_APPLY_MIGRATIONS", "true");
+}
 
 // Tickets API
 var ticketsapi = builder

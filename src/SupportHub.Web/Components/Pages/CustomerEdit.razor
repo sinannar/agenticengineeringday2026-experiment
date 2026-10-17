@@ -1,0 +1,155 @@
+@page "/customers/new"
+@page "/customers/{Id:guid}/edit"
+@rendermode InteractiveServer
+@inject CustomerApiClient CustomerApi
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsNew ? "Add customer" : "Edit customer")</PageTitle>
+
+<h1>@(IsNew ? "Add customer" : "Edit customer")</h1>
+
+@if (_loading)
+{
+    <p role="status">Loading customer...</p>
+}
+else if (_notFound)
+{
+    <div class="alert alert-warning" role="alert">Customer not found.</div>
+    <a href="customers">Back to customers</a>
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+        }
+        <div class="mb-3">
+            <label class="form-label" for="customer-name">Name</label>
+            <InputText id="customer-name" class="form-control" @bind-Value="_model.Name" />
+            <ValidationMessage For="@(() => _model.Name)" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="customer-email">Email</label>
+            <InputText id="customer-email" type="email" class="form-control" @bind-Value="_model.Email" />
+            <ValidationMessage For="@(() => _model.Email)" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="customer-phone">Phone number</label>
+            <InputText id="customer-phone" class="form-control" @bind-Value="_model.PhoneNumber" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="customer-tier">Support tier</label>
+            <InputSelect id="customer-tier" class="form-select" @bind-Value="_model.SupportTier">
+                @foreach (var tier in Enum.GetValues<SupportTierModel>())
+                {
+                    <option value="@tier">@tier</option>
+                }
+            </InputSelect>
+        </div>
+        <button class="btn btn-primary" type="submit" disabled="@_saving">Save</button>
+        <a class="btn btn-link" href="customers">Cancel</a>
+        @if (!IsNew)
+        {
+            <button class="btn btn-outline-danger ms-2" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete</button>
+        }
+    </EditForm>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private CustomerRequestModel _model = new();
+    private bool _loading;
+    private bool _saving;
+    private bool _notFound;
+    private string? _error;
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _notFound = false;
+        _error = null;
+        if (IsNew)
+        {
+            _model = new();
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+        try
+        {
+            var customer = await CustomerApi.GetCustomerAsync(Id!.Value);
+            if (customer is null)
+            {
+                _notFound = true;
+            }
+            else
+            {
+                _model = new CustomerRequestModel
+                {
+                    Name = customer.Name,
+                    Email = customer.Email,
+                    PhoneNumber = customer.PhoneNumber,
+                    SupportTier = customer.SupportTier
+                };
+            }
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            if (IsNew)
+            {
+                var customer = await CustomerApi.CreateCustomerAsync(_model);
+                Navigation.NavigateTo($"customers/{customer.Id}");
+            }
+            else
+            {
+                await CustomerApi.UpdateCustomerAsync(Id!.Value, _model);
+                Navigation.NavigateTo($"customers/{Id!.Value}");
+            }
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            await CustomerApi.DeleteCustomerAsync(Id!.Value);
+            Navigation.NavigateTo("customers");
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
