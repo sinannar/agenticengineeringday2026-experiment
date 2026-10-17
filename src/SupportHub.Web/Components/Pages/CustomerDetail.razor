@@ -1,0 +1,65 @@
+@page "/customers/{Id:guid}"
+@rendermode InteractiveServer
+@inject CustomerApiClient CustomerApi
+
+<PageTitle>Customer details</PageTitle>
+
+@if (_loading)
+{
+    <p role="status">Loading customer...</p>
+}
+else if (_notFound)
+{
+    <div class="alert alert-warning" role="alert">Customer not found.</div>
+    <a href="customers">Back to customers</a>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+    <a href="customers">Back to customers</a>
+}
+else if (_customer is not null)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@_customer.Name</h1>
+        <a class="btn btn-primary" href="@($"customers/{_customer.Id}/edit")">Edit</a>
+    </div>
+    <dl class="row">
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@_customer.Email</dd>
+        <dt class="col-sm-3">Phone</dt>
+        <dd class="col-sm-9">@(_customer.PhoneNumber ?? "—")</dd>
+        <dt class="col-sm-3">Support tier</dt>
+        <dd class="col-sm-9">@_customer.SupportTier</dd>
+    </dl>
+    <a href="customers">Back to customers</a>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private CustomerModel? _customer;
+    private bool _loading = true;
+    private bool _notFound;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _notFound = false;
+        _error = null;
+        try
+        {
+            _customer = await CustomerApi.GetCustomerAsync(Id);
+            _notFound = _customer is null;
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

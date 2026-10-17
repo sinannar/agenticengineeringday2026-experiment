@@ -1,0 +1,78 @@
+@page "/customers"
+@rendermode InteractiveServer
+@inject CustomerApiClient CustomerApi
+
+<PageTitle>Customers</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Customers</h1>
+    <a class="btn btn-primary" href="customers/new">Add customer</a>
+</div>
+
+@if (_loading)
+{
+    <p role="status">Loading customers...</p>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+    <button class="btn btn-secondary" @onclick="LoadCustomersAsync">Retry</button>
+}
+else if (_customers.Count == 0)
+{
+    <div class="alert alert-info">No customers found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Support tier</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in _customers)
+                {
+                    <tr>
+                        <td><a href="@($"customers/{customer.Id}")">@customer.Name</a></td>
+                        <td>@customer.Email</td>
+                        <td>@(customer.PhoneNumber ?? "—")</td>
+                        <td>@customer.SupportTier</td>
+                        <td><a class="btn btn-sm btn-outline-secondary" href="@($"customers/{customer.Id}/edit")">Edit</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<CustomerModel> _customers = [];
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadCustomersAsync();
+
+    private async Task LoadCustomersAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _customers = await CustomerApi.GetCustomersAsync();
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
