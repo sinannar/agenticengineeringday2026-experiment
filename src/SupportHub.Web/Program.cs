@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+builder.AddRedisClient("cache");
 builder.AddRedisOutputCache("cache");
 
 // Add services to the container.
@@ -18,7 +19,7 @@ builder.Services.AddHttpClient<CustomerApiClient>(client =>
 
 builder.Services.AddHttpClient<TicketApiClient>(client =>
     {
-        client.BaseAddress = new("https+http://ticketapi");
+        client.BaseAddress = new("https+http://ticketsapi");
     });
 
 var app = builder.Build();
