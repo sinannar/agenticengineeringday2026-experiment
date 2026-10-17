@@ -1,7 +1,10 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/SupportHub.Sla.Console/SupportHub.Sla.Console.csproj" />
+    <Project Path="src/SupportHub.Sla.Worker/SupportHub.Sla.Worker.csproj" />
     <Project Path="src/SupportHub.Tickets.Api/SupportHub.Tickets.Api.csproj" />
     <Project Path="src/SupportHub.Customers.Api/SupportHub.Customers.Api.csproj" />
+    <Project Path="src/SupportHub.Activity.Worker/SupportHub.Activity.Worker.csproj" />
     <Project Path="src/SupportHub.AppHost/SupportHub.AppHost.csproj" />
     <Project Path="src/SupportHub.ServiceDefaults/SupportHub.ServiceDefaults.csproj" />
     <Project Path="src/SupportHub.Web/SupportHub.Web.csproj" />

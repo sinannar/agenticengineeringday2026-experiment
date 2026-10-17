@@ -13,6 +13,9 @@
     <ProjectReference Include="..\SupportHub.Tickets.Api\SupportHub.Tickets.Api.csproj" />
     <ProjectReference Include="..\SupportHub.Customers.Api\SupportHub.Customers.Api.csproj" />
     <ProjectReference Include="..\SupportHub.Web\SupportHub.Web.csproj" />
+    <ProjectReference Include="..\SupportHub.Activity.Worker\SupportHub.Activity.Worker.csproj" />
+    <ProjectReference Include="..\SupportHub.Sla.Worker\SupportHub.Sla.Worker.csproj" />
+    <ProjectReference Include="..\SupportHub.Sla.Console\SupportHub.Sla.Console.csproj" />
   </ItemGroup>
 
   <ItemGroup>
