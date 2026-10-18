@@ -107,7 +107,10 @@ else if (_ticket is not null)
                             @attachment.OriginalFileName
                         </button>
                         <span class="attachment-meta">@FormatSize(attachment.Size) · @attachment.ContentType</span>
-                        <button class="button button-danger button-small" @onclick="() => DeleteAttachmentAsync(attachment.Id)">Delete</button>
+                        <ConfirmAction Label="Delete"
+                                       Prompt="@($"Delete {attachment.OriginalFileName}?")"
+                                       IsBusy="@(_uploading || _deletingAttachmentId == attachment.Id)"
+                                       OnConfirm="() => DeleteAttachmentAsync(attachment.Id)" />
                     </li>
                 }
             </ul>
@@ -176,6 +179,7 @@ else if (_ticket is not null)
     private IReadOnlyList<SupportHub.Web.AttachmentModel> _attachments = [];
     private bool _attachmentsLoading;
     private bool _uploading;
+    private Guid? _deletingAttachmentId;
     private int _uploadProgress;
     private string? _attachmentError;
     private IReadOnlyList<ActivityHistoryModel> _activity = [];
@@ -301,6 +305,7 @@ else if (_ticket is not null)
 
     private async Task DeleteAttachmentAsync(Guid attachmentId)
     {
+        _deletingAttachmentId = attachmentId;
         _attachmentError = null;
         try
         {
@@ -310,6 +315,10 @@ else if (_ticket is not null)
         catch (TicketApiException exception)
         {
             _attachmentError = exception.Message;
+        }
+        finally
+        {
+            _deletingAttachmentId = null;
         }
     }
 

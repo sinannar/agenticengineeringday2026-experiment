@@ -59,7 +59,10 @@ else
                 <a class="button button-secondary" href="customers">Cancel</a>
                 @if (!IsNew)
                 {
-                    <button class="button button-danger" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete customer</button>
+                    <ConfirmAction Label="Delete customer"
+                                   Prompt="Delete this customer and its support history?"
+                                   IsBusy="_saving"
+                                   OnConfirm="DeleteAsync" />
                 }
             </div>
         </EditForm>

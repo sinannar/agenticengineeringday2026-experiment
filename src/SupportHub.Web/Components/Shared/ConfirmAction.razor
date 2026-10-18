@@ -1,0 +1,42 @@
+@if (!_confirming)
+{
+    <button class="button button-danger button-small" type="button" @onclick="BeginConfirmation" disabled="@IsBusy">
+        @Label
+    </button>
+}
+else
+{
+    <div class="confirmation-panel" role="alertdialog" aria-label="@Prompt" aria-describedby="@_descriptionId">
+        <p id="@_descriptionId">@Prompt</p>
+        <div class="confirmation-actions">
+            <button class="button button-danger button-small" type="button" @onclick="ConfirmAsync" disabled="@IsBusy">
+                @ConfirmLabel
+            </button>
+            <button class="button button-secondary button-small" type="button" @onclick="CancelConfirmation" disabled="@IsBusy">
+                @CancelLabel
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Prompt { get; set; } = string.Empty;
+    [Parameter] public string ConfirmLabel { get; set; } = "Confirm";
+    [Parameter] public string CancelLabel { get; set; } = "Cancel";
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnConfirm { get; set; }
+
+    private bool _confirming;
+    private string _descriptionId = $"confirm-{Guid.NewGuid():N}";
+
+    private void BeginConfirmation() => _confirming = true;
+
+    private void CancelConfirmation() => _confirming = false;
+
+    private async Task ConfirmAsync()
+    {
+        await OnConfirm.InvokeAsync();
+        _confirming = false;
+    }
+}

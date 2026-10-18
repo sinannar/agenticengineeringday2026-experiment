@@ -243,6 +243,29 @@ h3 {
     font-size: 0.78rem;
 }
 
+.confirmation-panel {
+    display: grid;
+    gap: 0.45rem;
+    max-width: 24rem;
+    padding: 0.65rem;
+    border: 1px solid var(--border-danger);
+    border-radius: var(--radius-sm);
+    background: #fff5f5;
+}
+
+.confirmation-panel p {
+    margin: 0;
+    color: var(--text-strong);
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.confirmation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
 .optional-label {
     color: var(--text-muted);
     font-size: 0.75rem;

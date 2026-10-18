@@ -81,7 +81,10 @@ else
                 <a class="button button-secondary" href="tickets">Cancel</a>
                 @if (!IsNew)
                 {
-                    <button class="button button-danger" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete ticket</button>
+                    <ConfirmAction Label="Delete ticket"
+                                   Prompt="Delete this ticket and its attachments?"
+                                   IsBusy="_saving"
+                                   OnConfirm="DeleteAsync" />
                 }
             </div>
         </EditForm>

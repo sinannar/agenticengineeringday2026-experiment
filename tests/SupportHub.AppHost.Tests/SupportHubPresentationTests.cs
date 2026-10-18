@@ -36,4 +36,23 @@ public sealed class SupportHubPresentationTests
     {
         Assert.Equal("No records found.", ConsoleTable.Render(["ID"], []));
     }
+
+    [Fact]
+    public void ConsoleTable_BoundsLongValuesToRequestedWidth()
+    {
+        var output = ConsoleTable.Render(
+            ["ID", "Title", "Email"],
+            [
+                (IReadOnlyList<string>)
+                [
+                    "12345678",
+                    "A ticket title that is much longer than a narrow terminal can display",
+                    "operator-with-a-long-address@example.com"
+                ]
+            ],
+            maxWidth: 40);
+
+        Assert.All(output.Split(Environment.NewLine), line => Assert.True(line.Length <= 40));
+        Assert.Contains("...", output);
+    }
 }
