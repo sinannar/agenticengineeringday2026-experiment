@@ -1,0 +1,133 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - link "SupportHub" [ref=f2e6] [cursor=pointer]:
+      - /url: ""
+    - checkbox "Navigation menu" [ref=f2e7] [cursor=pointer]
+  - main [ref=f2e8]:
+    - link "About" [ref=f2e10] [cursor=pointer]:
+      - /url: https://learn.microsoft.com/aspnet/core/
+    - article [ref=f2e11]:
+      - generic [ref=f2e105]:
+        - heading "Tickets" [level=1] [ref=f2e106]
+        - link "Add ticket" [ref=f2e107] [cursor=pointer]:
+          - /url: tickets/new
+      - generic [ref=f2e109]:
+        - generic [ref=f2e110]:
+          - generic [ref=f2e111]:
+            - generic [ref=f2e112]: Status
+            - combobox "Status" [ref=f2e113]:
+              - option "All statuses" [selected]
+              - option "New"
+              - option "Open"
+              - option "InProgress"
+              - option "Resolved"
+              - option "Closed"
+          - generic [ref=f2e114]:
+            - generic [ref=f2e115]: Priority
+            - combobox "Priority" [ref=f2e116]:
+              - option "All priorities" [selected]
+              - option "Low"
+              - option "Medium"
+              - option "High"
+          - generic [ref=f2e117]:
+            - generic [ref=f2e118]: Customer
+            - combobox "Customer" [ref=f2e119]:
+              - option "All customers" [selected]
+              - option "Attachment Review Customer"
+              - option "Runtime Activity"
+              - option "Runtime Activity 2"
+              - option "Runtime Activity 3"
+              - option "Runtime Activity 4"
+              - option "Runtime Activity 5"
+              - option "Toffee"
+          - generic [ref=f2e120]:
+            - generic [ref=f2e121]: Assignee
+            - textbox "Assignee" [ref=f2e122]
+        - button "Apply filters" [ref=f2e123] [cursor=pointer]
+      - table [ref=f2e125]:
+        - rowgroup [ref=f2e126]:
+          - row [ref=f2e127]:
+            - columnheader "Title" [ref=f2e128]
+            - columnheader "Customer" [ref=f2e129]
+            - columnheader "Status" [ref=f2e130]
+            - columnheader "Priority" [ref=f2e131]
+            - columnheader "Assignee" [ref=f2e132]
+            - columnheader [ref=f2e133]
+        - rowgroup [ref=f2e134]:
+          - row [ref=f2e135]:
+            - cell [ref=f2e136]:
+              - link "Runtime ticket 5" [ref=f2e137] [cursor=pointer]:
+                - /url: tickets/08042c87-33c4-4b0c-a1a1-ccaedfec2fb5
+            - cell "Runtime Activity 5" [ref=f2e138]
+            - cell "Open" [ref=f2e139]
+            - cell "High" [ref=f2e140]
+            - cell "—" [ref=f2e141]
+            - cell [ref=f2e142]:
+              - link "Edit" [ref=f2e143] [cursor=pointer]:
+                - /url: tickets/08042c87-33c4-4b0c-a1a1-ccaedfec2fb5/edit
+          - row [ref=f2e144]:
+            - cell [ref=f2e145]:
+              - link "Runtime ticket 4" [ref=f2e146] [cursor=pointer]:
+                - /url: tickets/d6d115a8-fc6e-4234-a2f8-99b3917a278b
+            - cell "Runtime Activity 4" [ref=f2e147]
+            - cell "Open" [ref=f2e148]
+            - cell "High" [ref=f2e149]
+            - cell "—" [ref=f2e150]
+            - cell [ref=f2e151]:
+              - link "Edit" [ref=f2e152] [cursor=pointer]:
+                - /url: tickets/d6d115a8-fc6e-4234-a2f8-99b3917a278b/edit
+          - row [ref=f2e153]:
+            - cell [ref=f2e154]:
+              - link "Runtime ticket 3" [ref=f2e155] [cursor=pointer]:
+                - /url: tickets/89b34302-2e78-418f-bc15-4840813ac958
+            - cell "Runtime Activity 3" [ref=f2e156]
+            - cell "Open" [ref=f2e157]
+            - cell "High" [ref=f2e158]
+            - cell "—" [ref=f2e159]
+            - cell [ref=f2e160]:
+              - link "Edit" [ref=f2e161] [cursor=pointer]:
+                - /url: tickets/89b34302-2e78-418f-bc15-4840813ac958/edit
+          - row [ref=f2e162]:
+            - cell [ref=f2e163]:
+              - link "Runtime ticket 2" [ref=f2e164] [cursor=pointer]:
+                - /url: tickets/ec72b65d-13ad-440f-adad-dbfb027091fc
+            - cell "Runtime Activity 2" [ref=f2e165]
+            - cell "Open" [ref=f2e166]
+            - cell "High" [ref=f2e167]
+            - cell "—" [ref=f2e168]
+            - cell [ref=f2e169]:
+              - link "Edit" [ref=f2e170] [cursor=pointer]:
+                - /url: tickets/ec72b65d-13ad-440f-adad-dbfb027091fc/edit
+          - row [ref=f2e171]:
+            - cell [ref=f2e172]:
+              - link "Runtime ticket" [ref=f2e173] [cursor=pointer]:
+                - /url: tickets/5e49bb1d-6c49-431e-b5f9-55e4f88d77cb
+            - cell "Runtime Activity" [ref=f2e174]
+            - cell "Open" [ref=f2e175]
+            - cell "High" [ref=f2e176]
+            - cell "—" [ref=f2e177]
+            - cell [ref=f2e178]:
+              - link "Edit" [ref=f2e179] [cursor=pointer]:
+                - /url: tickets/5e49bb1d-6c49-431e-b5f9-55e4f88d77cb/edit
+          - row [ref=f2e180]:
+            - cell [ref=f2e181]:
+              - link "Attachment review ticket" [ref=f2e182] [cursor=pointer]:
+                - /url: tickets/f685e6a0-7041-497b-a207-745d6c6e8a0a
+            - cell "Attachment Review Customer" [ref=f2e183]
+            - cell "Open" [ref=f2e184]
+            - cell "Medium" [ref=f2e185]
+            - cell "—" [ref=f2e186]
+            - cell [ref=f2e187]:
+              - link "Edit" [ref=f2e188] [cursor=pointer]:
+                - /url: tickets/f685e6a0-7041-497b-a207-745d6c6e8a0a/edit
+          - row [ref=f2e189]:
+            - cell [ref=f2e190]:
+              - link "asd" [ref=f2e191] [cursor=pointer]:
+                - /url: tickets/3dcb0cda-21a4-49e2-8f5c-0a88b1d1fd60
+            - cell "Toffee" [ref=f2e192]
+            - cell "Open" [ref=f2e193]
+            - cell "High" [ref=f2e194]
+            - cell "test" [ref=f2e195]
+            - cell [ref=f2e196]:
+              - link "Edit" [ref=f2e197] [cursor=pointer]:
+                - /url: tickets/3dcb0cda-21a4-49e2-8f5c-0a88b1d1fd60/edit

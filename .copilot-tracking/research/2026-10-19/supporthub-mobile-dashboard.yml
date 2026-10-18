@@ -1,0 +1,66 @@
+- generic [ref=f4e2]:
+  - generic [ref=f4e3]:
+    - link "SupportHub" [ref=f4e6] [cursor=pointer]:
+      - /url: ""
+    - checkbox "Navigation menu" [ref=f4e7] [cursor=pointer]
+  - main [ref=f4e8]:
+    - link "About" [ref=f4e10] [cursor=pointer]:
+      - /url: https://learn.microsoft.com/aspnet/core/
+    - article [ref=f4e11]:
+      - generic [ref=f4e79]:
+        - heading "Support dashboard" [level=1] [ref=f4e80]
+        - generic "Dashboard freshness" [ref=f4e81]: Evaluated 19/10/2026 12:43 AM; cached 0.1s ago
+      - generic [ref=f4e82]:
+        - generic [ref=f4e85]:
+          - heading "Open tickets" [level=2] [ref=f4e86]
+          - paragraph [ref=f4e87]: "7"
+        - generic [ref=f4e90]:
+          - heading "At-risk SLAs" [level=2] [ref=f4e91]
+          - paragraph [ref=f4e92]: "0"
+        - generic [ref=f4e95]:
+          - heading "Breached SLAs" [level=2] [ref=f4e96]
+          - paragraph [ref=f4e97]: "6"
+        - generic [ref=f4e100]:
+          - heading "Total tickets" [level=2] [ref=f4e101]
+          - paragraph [ref=f4e102]: "7"
+      - generic [ref=f4e103]:
+        - region [ref=f4e104]:
+          - heading "Tickets by status" [level=2] [ref=f4e105]
+          - table [ref=f4e107]:
+            - rowgroup [ref=f4e108]:
+              - row [ref=f4e109]:
+                - columnheader "Status" [ref=f4e110]
+                - columnheader "Count" [ref=f4e111]
+            - rowgroup [ref=f4e112]:
+              - row [ref=f4e113]:
+                - rowheader "New" [ref=f4e114]
+                - cell "0" [ref=f4e115]
+              - row [ref=f4e116]:
+                - rowheader "Open" [ref=f4e117]
+                - cell "7" [ref=f4e118]
+              - row [ref=f4e119]:
+                - rowheader "InProgress" [ref=f4e120]
+                - cell "0" [ref=f4e121]
+              - row [ref=f4e122]:
+                - rowheader "Resolved" [ref=f4e123]
+                - cell "0" [ref=f4e124]
+              - row [ref=f4e125]:
+                - rowheader "Closed" [ref=f4e126]
+                - cell "0" [ref=f4e127]
+        - region [ref=f4e128]:
+          - heading "Tickets by priority" [level=2] [ref=f4e129]
+          - table [ref=f4e131]:
+            - rowgroup [ref=f4e132]:
+              - row [ref=f4e133]:
+                - columnheader "Priority" [ref=f4e134]
+                - columnheader "Count" [ref=f4e135]
+            - rowgroup [ref=f4e136]:
+              - row [ref=f4e137]:
+                - rowheader "Low" [ref=f4e138]
+                - cell "0" [ref=f4e139]
+              - row [ref=f4e140]:
+                - rowheader "Medium" [ref=f4e141]
+                - cell "1" [ref=f4e142]
+              - row [ref=f4e143]:
+                - rowheader "High" [ref=f4e144]
+                - cell "6" [ref=f4e145]

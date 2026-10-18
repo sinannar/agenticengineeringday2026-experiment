@@ -1,0 +1,49 @@
+- generic [ref=f5e2]:
+  - generic [ref=f5e3]:
+    - link "SupportHub" [ref=f5e6] [cursor=pointer]:
+      - /url: ""
+    - checkbox "Navigation menu" [ref=f5e7] [cursor=pointer]
+  - main [ref=f5e8]:
+    - link "About" [ref=f5e10] [cursor=pointer]:
+      - /url: https://learn.microsoft.com/aspnet/core/
+    - article [ref=f5e11]:
+      - heading "Edit ticket" [level=1] [ref=f5e35]
+      - generic [ref=f5e36]:
+        - generic [ref=f5e37]:
+          - generic [ref=f5e38]: Title
+          - textbox "Title" [ref=f5e39]: Attachment review ticket
+        - generic [ref=f5e40]:
+          - generic [ref=f5e41]: Description
+          - textbox "Description" [ref=f5e42]: Validate download preflight behavior.
+        - generic [ref=f5e43]:
+          - generic [ref=f5e44]: Customer
+          - combobox "Customer" [ref=f5e45]:
+            - option "Select a customer"
+            - option "Attachment Review Customer" [selected]
+            - option "Runtime Activity"
+            - option "Runtime Activity 2"
+            - option "Runtime Activity 3"
+            - option "Runtime Activity 4"
+            - option "Runtime Activity 5"
+            - option "Toffee"
+        - generic [ref=f5e46]:
+          - generic [ref=f5e47]: Status
+          - combobox "Status" [ref=f5e48]:
+            - option "New"
+            - option "Open" [selected]
+            - option "InProgress"
+            - option "Resolved"
+            - option "Closed"
+        - generic [ref=f5e49]:
+          - generic [ref=f5e50]: Priority
+          - combobox "Priority" [ref=f5e51]:
+            - option "Low"
+            - option "Medium" [selected]
+            - option "High"
+        - generic [ref=f5e52]:
+          - generic [ref=f5e53]: Assignee
+          - textbox "Assignee" [ref=f5e54]
+        - button "Save" [ref=f5e55] [cursor=pointer]
+        - link "Cancel" [ref=f5e56] [cursor=pointer]:
+          - /url: tickets
+        - button "Delete" [ref=f5e57] [cursor=pointer]

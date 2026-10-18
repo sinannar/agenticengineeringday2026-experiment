@@ -1,0 +1,56 @@
+- generic [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - link "SupportHub" [ref=f3e6] [cursor=pointer]:
+      - /url: ""
+    - checkbox "Navigation menu" [ref=f3e7] [cursor=pointer]
+  - main [ref=f3e8]:
+    - link "About" [ref=f3e10] [cursor=pointer]:
+      - /url: https://learn.microsoft.com/aspnet/core/
+    - article [ref=f3e11]:
+      - generic [ref=f3e56]:
+        - heading "Attachment review ticket" [level=1] [ref=f3e57]
+        - link "Edit" [ref=f3e58] [cursor=pointer]:
+          - /url: tickets/f685e6a0-7041-497b-a207-745d6c6e8a0a/edit
+      - generic [ref=f3e59]:
+        - term [ref=f3e60]: Description
+        - definition [ref=f3e61]: Validate download preflight behavior.
+        - term [ref=f3e62]: Customer
+        - definition [ref=f3e63]: Attachment Review Customer
+        - term [ref=f3e64]: Status
+        - definition [ref=f3e65]: Open
+        - term [ref=f3e66]: Priority
+        - definition [ref=f3e67]: Medium
+        - term [ref=f3e68]: Assignee
+        - definition [ref=f3e69]: —
+        - term [ref=f3e70]: Created
+        - definition [ref=f3e71]: 18/10/2026 5:15:58 AM +00:00
+        - term [ref=f3e72]: Updated
+        - definition [ref=f3e73]: 18/10/2026 5:15:58 AM +00:00
+      - region [ref=f3e74]:
+        - heading "Service-level agreement" [level=2] [ref=f3e75]
+        - generic [ref=f3e76]:
+          - term [ref=f3e77]: Status
+          - definition [ref=f3e78]:
+            - strong [ref=f3e79]: On track
+          - term [ref=f3e80]: Support tier
+          - definition [ref=f3e81]: Standard
+          - term [ref=f3e82]: Deadline
+          - definition [ref=f3e83]: 18/10/2026 5:15:58 PM +00:00
+          - term [ref=f3e84]: Time remaining
+          - definition [ref=f3e85]: 05:34:53.8315970
+      - region [ref=f3e86]:
+        - heading "Attachments" [level=2] [ref=f3e87]
+        - list [ref=f3e88]:
+          - listitem [ref=f3e89]:
+            - button "supporthub-attachment-review.txt" [ref=f3e90] [cursor=pointer]
+            - generic [ref=f3e91]: (1 KiB, text/plain)
+            - button "Delete" [ref=f3e92] [cursor=pointer]
+        - generic [ref=f3e93]:
+          - generic [ref=f3e94]: Upload attachment
+          - button "Upload attachment" [ref=f3e95]
+          - generic [ref=f3e96]: PDF, TXT, PNG, or JPEG up to 10 MiB.
+      - region [ref=f3e97]:
+        - heading "Activity history" [level=2] [ref=f3e98]
+        - paragraph [ref=f3e99]: No activity has been processed yet.
+      - link "Back to tickets" [ref=f3e100] [cursor=pointer]:
+        - /url: tickets

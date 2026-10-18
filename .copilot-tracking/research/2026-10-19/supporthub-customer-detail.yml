@@ -1,0 +1,30 @@
+- generic [ref=f6e2]:
+  - generic [ref=f6e3]:
+    - link "SupportHub" [ref=f6e6] [cursor=pointer]:
+      - /url: ""
+    - navigation [ref=f6e8]:
+      - link "Dashboard" [ref=f6e10] [cursor=pointer]:
+        - /url: ""
+      - link "Counter" [ref=f6e13] [cursor=pointer]:
+        - /url: counter
+      - link "Customers" [ref=f6e16] [cursor=pointer]:
+        - /url: customers
+      - link "Tickets" [ref=f6e19] [cursor=pointer]:
+        - /url: tickets
+  - main [ref=f6e21]:
+    - link "About" [ref=f6e23] [cursor=pointer]:
+      - /url: https://learn.microsoft.com/aspnet/core/
+    - article [ref=f6e24]:
+      - generic [ref=f6e36]:
+        - heading "Attachment Review Customer" [level=1] [ref=f6e37]
+        - link "Edit" [ref=f6e38] [cursor=pointer]:
+          - /url: customers/a51ec1ad-a015-4d0b-af18-b860d551ceca/edit
+      - generic [ref=f6e39]:
+        - term [ref=f6e40]: Email
+        - definition [ref=f6e41]: attachment-review@example.com
+        - term [ref=f6e42]: Phone
+        - definition [ref=f6e43]: —
+        - term [ref=f6e44]: Support tier
+        - definition [ref=f6e45]: Standard
+      - link "Back to customers" [ref=f6e46] [cursor=pointer]:
+        - /url: customers
