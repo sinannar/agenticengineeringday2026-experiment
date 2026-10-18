@@ -7,76 +7,85 @@
 
 <PageTitle>@(IsNew ? "Add ticket" : "Edit ticket")</PageTitle>
 
-<h1>@(IsNew ? "Add ticket" : "Edit ticket")</h1>
+<PageHeader Title="@(IsNew ? "Add ticket" : "Edit ticket")" Eyebrow="Work queue"
+            Lede="Capture the context, ownership, and priority needed to move this conversation forward." />
 
 @if (_loading)
 {
-    <p role="status">Loading ticket...</p>
+    <div class="state-panel" role="status">Loading ticket...</div>
 }
 else if (_notFound)
 {
-    <div class="alert alert-warning" role="alert">Ticket not found.</div>
-    <a href="tickets">Back to tickets</a>
+    <EmptyState Title="Ticket not found" Description="This ticket may have been removed or the link may be out of date." Icon="?">
+        <a class="button button-secondary" href="tickets">Back to tickets</a>
+    </EmptyState>
 }
 else
 {
-    <EditForm Model="_model" OnValidSubmit="SaveAsync">
-        <DataAnnotationsValidator />
-        @if (_error is not null)
-        {
-            <div class="alert alert-danger" role="alert">@_error</div>
-        }
-        <div class="mb-3">
-            <label class="form-label" for="ticket-title">Title</label>
-            <InputText id="ticket-title" class="form-control" @bind-Value="_model.Title" />
-            <ValidationMessage For="@(() => _model.Title)" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="ticket-description">Description</label>
-            <InputTextArea id="ticket-description" class="form-control" @bind-Value="_model.Description" />
-            <ValidationMessage For="@(() => _model.Description)" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="ticket-customer">Customer</label>
-            <InputSelect id="ticket-customer" class="form-select" @bind-Value="_model.CustomerId">
-                <option value="@Guid.Empty">Select a customer</option>
-                @foreach (var customer in _customers)
+    <SectionCard Heading="Ticket details" Description="Fields marked as required must be completed before saving.">
+        <EditForm Model="_model" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            @if (_error is not null)
+            {
+                <InlineError Message="@_error" />
+            }
+            <ValidationSummary />
+            <div class="form-grid">
+                <div class="form-grid-span">
+                    <label class="form-label" for="ticket-title">Title</label>
+                    <InputText id="ticket-title" class="form-control" @bind-Value="_model.Title" />
+                    <ValidationMessage For="@(() => _model.Title)" />
+                </div>
+                <div class="form-grid-span">
+                    <label class="form-label" for="ticket-description">Description</label>
+                    <InputTextArea id="ticket-description" class="form-control form-textarea" @bind-Value="_model.Description" />
+                    <ValidationMessage For="@(() => _model.Description)" />
+                </div>
+                <div>
+                    <label class="form-label" for="ticket-customer">Customer</label>
+                    <InputSelect id="ticket-customer" class="form-select" @bind-Value="_model.CustomerId">
+                        <option value="@Guid.Empty">Select a customer</option>
+                        @foreach (var customer in _customers)
+                        {
+                            <option value="@customer.Id">@customer.Name</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => _model.CustomerId)" />
+                </div>
+                <div>
+                    <label class="form-label" for="ticket-assignee">Assignee <span class="optional-label">(optional)</span></label>
+                    <InputText id="ticket-assignee" class="form-control" @bind-Value="_model.Assignee" />
+                    <ValidationMessage For="@(() => _model.Assignee)" />
+                </div>
+                <div>
+                    <label class="form-label" for="ticket-status">Status</label>
+                    <InputSelect id="ticket-status" class="form-select" @bind-Value="_model.Status">
+                        @foreach (var status in Enum.GetValues<TicketStatusModel>())
+                        {
+                            <option value="@status">@SupportHubVocabulary.TicketStatus(status.ToString())</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="form-label" for="ticket-priority">Priority</label>
+                    <InputSelect id="ticket-priority" class="form-select" @bind-Value="_model.Priority">
+                        @foreach (var priority in Enum.GetValues<TicketPriorityModel>())
+                        {
+                            <option value="@priority">@SupportHubVocabulary.TicketPriority(priority.ToString())</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-primary" type="submit" disabled="@_saving">@(IsNew ? "Create ticket" : "Save changes")</button>
+                <a class="button button-secondary" href="tickets">Cancel</a>
+                @if (!IsNew)
                 {
-                    <option value="@customer.Id">@customer.Name</option>
+                    <button class="button button-danger" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete ticket</button>
                 }
-            </InputSelect>
-            <ValidationMessage For="@(() => _model.CustomerId)" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="ticket-status">Status</label>
-            <InputSelect id="ticket-status" class="form-select" @bind-Value="_model.Status">
-                @foreach (var status in Enum.GetValues<TicketStatusModel>())
-                {
-                    <option value="@status">@status</option>
-                }
-            </InputSelect>
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="ticket-priority">Priority</label>
-            <InputSelect id="ticket-priority" class="form-select" @bind-Value="_model.Priority">
-                @foreach (var priority in Enum.GetValues<TicketPriorityModel>())
-                {
-                    <option value="@priority">@priority</option>
-                }
-            </InputSelect>
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="ticket-assignee">Assignee</label>
-            <InputText id="ticket-assignee" class="form-control" @bind-Value="_model.Assignee" />
-            <ValidationMessage For="@(() => _model.Assignee)" />
-        </div>
-        <button class="btn btn-primary" type="submit" disabled="@_saving">Save</button>
-        <a class="btn btn-link" href="tickets">Cancel</a>
-        @if (!IsNew)
-        {
-            <button class="btn btn-outline-danger ms-2" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete</button>
-        }
-    </EditForm>
+            </div>
+        </EditForm>
+    </SectionCard>
 }
 
 @code {

@@ -1,0 +1,14 @@
+<div class="state-panel state-panel-danger" role="alert">
+    <strong>@Title</strong>
+    <span>@Message</span>
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Unable to complete request";
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

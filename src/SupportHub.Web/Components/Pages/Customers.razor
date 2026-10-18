@@ -4,57 +4,72 @@
 
 <PageTitle>Customers</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Customers</h1>
-    <a class="btn btn-primary" href="customers/new">Add customer</a>
-</div>
+<PageHeader Title="Customers" Eyebrow="People and accounts"
+            Lede="Find the account behind each support conversation and keep contact details current.">
+    <Actions>
+        <a class="button button-primary" href="customers/new">Add customer</a>
+    </Actions>
+</PageHeader>
 
 @if (_loading)
 {
-    <p role="status">Loading customers...</p>
+    <div class="state-panel" role="status">Loading customers...</div>
 }
 else if (_error is not null)
 {
-    <div class="alert alert-danger" role="alert">@_error</div>
-    <button class="btn btn-secondary" @onclick="LoadCustomersAsync">Retry</button>
+    <InlineError Message="@_error">
+        <button class="button button-primary" @onclick="LoadCustomersAsync">Try again</button>
+    </InlineError>
 }
 else if (_customers.Count == 0)
 {
-    <div class="alert alert-info">No customers found.</div>
+    <EmptyState Title="No customers yet" Description="Create the first customer record to connect tickets with the right account." Icon="◎">
+        <a class="button button-primary" href="customers/new">Add customer</a>
+    </EmptyState>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped">
+    <SectionCard Heading="@($"{_customers.Count} customer records")" Description="Select a customer to review contact information and support tier.">
+        <div class="table-responsive">
+            <table class="table table-striped data-table">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Support tier</th>
-                    <th></th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Support tier</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var customer in _customers)
                 {
                     <tr>
-                        <td><a href="@($"customers/{customer.Id}")">@customer.Name</a></td>
+                        <th scope="row"><a class="table-primary-link" href="@($"customers/{customer.Id}")">@customer.Name</a></th>
                         <td>@customer.Email</td>
                         <td>@(customer.PhoneNumber ?? "—")</td>
-                        <td>@customer.SupportTier</td>
+                        <td><StatusBadge Label="@SupportHubVocabulary.SupportTier(customer.SupportTier.ToString())" Tone="@TierTone(customer.SupportTier)" /></td>
                         <td><a class="btn btn-sm btn-outline-secondary" href="@($"customers/{customer.Id}/edit")">Edit</a></td>
                     </tr>
                 }
             </tbody>
-        </table>
-    </div>
+            </table>
+        </div>
+    </SectionCard>
 }
 
 @code {
     private IReadOnlyList<CustomerModel> _customers = [];
     private bool _loading = true;
     private string? _error;
+
+    private static string TierTone(SupportTierModel tier) =>
+        tier switch
+        {
+            SupportTierModel.Enterprise => "info",
+            SupportTierModel.Premium => "success",
+            _ => "neutral"
+        };
 
     protected override async Task OnInitializedAsync() => await LoadCustomersAsync();
 

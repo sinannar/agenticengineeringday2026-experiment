@@ -1,0 +1,32 @@
+<section class="section-card" aria-labelledby="@HeadingId">
+    @if (!string.IsNullOrWhiteSpace(Heading))
+    {
+        <div class="section-card-header">
+            <div>
+                <h2 id="@HeadingId">@Heading</h2>
+                @if (!string.IsNullOrWhiteSpace(Description))
+                {
+                    <p>@Description</p>
+                }
+            </div>
+            @if (HeaderContent is not null)
+            {
+                @HeaderContent
+            }
+        </div>
+    }
+    <div class="section-card-body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = default!;
+    [Parameter] public string Heading { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? HeadingId { get; set; }
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+
+    protected override void OnParametersSet() =>
+        HeadingId ??= $"section-{Guid.NewGuid():N}";
+}

@@ -84,7 +84,7 @@ flowchart LR
 The plan moves from template removal and visual foundations, through shared components and page composition, to console alignment and a final cross-surface verification gate. API ownership, service discovery, and business behavior remain unchanged.
 
 <!-- rpi:phase id=P01 -->
-### [ ] P01: Remove template presentation and establish the SupportHub shell
+### [x] P01: Remove template presentation and establish the SupportHub shell
 
 Goals:
 * Replace the default Blazor presentation with a recognizable, responsive SupportHub shell so every route starts from the same accessible operations workspace.
@@ -116,7 +116,7 @@ flowchart LR
 Highlighted work: replace `MainLayout`, `NavMenu`, layout CSS, global CSS, and active template/demo assets while retaining the Blazor route and service-discovery foundations.
 
 <!-- rpi:task id=P01-T01 -->
-#### [ ] P01-T01: Remove active Blazor demo and template affordances
+#### [x] P01-T01: Remove active Blazor demo and template affordances
 
 Goals:
 * The active application no longer exposes template/demo navigation, routes, links, icons, copy, or unused assets that make SupportHub appear unfinished.
@@ -149,7 +149,7 @@ Dependencies:
 * None.
 
 <!-- rpi:task id=P01-T02 -->
-#### [ ] P01-T02: Build the responsive SupportHub application shell
+#### [x] P01-T02: Build the responsive SupportHub application shell
 
 Goals:
 * The web provides a stable support-oriented shell with branded identity, primary navigation, contextual page title, breadcrumbs where useful, and mobile navigation that remains understandable and keyboard-operable.
@@ -181,7 +181,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:task id=P01-T03 -->
-#### [ ] P01-T03: Define SupportHub visual identity and design tokens
+#### [x] P01-T03: Define SupportHub visual identity and design tokens
 
 Goals:
 * The web has one maintainable visual vocabulary for surfaces, typography, spacing, borders, focus, status meaning, and responsive behavior that shared components and pages can consume consistently.
@@ -209,7 +209,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:phase id=P02 -->
-### [ ] P02: Create accessible shared components and presentation helpers
+### [x] P02: Create accessible shared components and presentation helpers
 
 Goals:
 * Establish reusable UI primitives so status, metadata, tables, forms, empty/error states, and asynchronous activity are consistent across pages instead of being rebuilt locally.
@@ -239,7 +239,7 @@ flowchart LR
 Highlighted work: add shared components and small presentation-only helpers for consistent labels and state semantics; no domain rules move into the UI.
 
 <!-- rpi:task id=P02-T01 -->
-#### [ ] P02-T01: Add status, priority, SLA, tier, and state components
+#### [x] P02-T01: Add status, priority, SLA, tier, and state components
 
 Goals:
 * Human-readable status and operational state are consistently rendered as accessible text with optional visual emphasis across dashboard, lists, detail pages, and forms.
@@ -270,7 +270,7 @@ Dependencies:
 * P01-T03.
 
 <!-- rpi:task id=P02-T02 -->
-#### [ ] P02-T02: Add responsive data, metadata, form, attachment, and activity components
+#### [x] P02-T02: Add responsive data, metadata, form, attachment, and activity components
 
 Goals:
 * Reusable composition patterns make dense support data readable on desktop and mobile while preserving current actions and asynchronous states.
@@ -302,7 +302,7 @@ Dependencies:
 * P02-T01.
 
 <!-- rpi:task id=P02-T03 -->
-#### [ ] P02-T03: Add focused presentation tests for shared components
+#### [x] P02-T03: Add focused presentation tests for shared components
 
 Goals:
 * Shared components have regression coverage for semantics and state variation before pages are migrated to them.
@@ -329,7 +329,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:phase id=P03 -->
-### [ ] P03: Redesign dashboard, customer, and ticket journeys
+### [x] P03: Redesign dashboard, customer, and ticket journeys
 
 Goals:
 * Apply the shared shell and components to the primary support journeys so staff can scan workload, find customers/tickets, and complete existing CRUD actions without learning new business behavior.
@@ -358,7 +358,7 @@ flowchart LR
 Highlighted work: migrate overview, customer, and ticket pages to the shared vocabulary while preserving all existing API calls and actions.
 
 <!-- rpi:task id=P03-T01 -->
-#### [ ] P03-T01: Redesign the dashboard as an operational overview
+#### [x] P03-T01: Redesign the dashboard as an operational overview
 
 Goals:
 * The dashboard presents workload, SLA risk, status, priority, freshness, and errors as a clear operational overview with explicit data state.
@@ -388,7 +388,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P03-T02 -->
-#### [ ] P03-T02: Redesign customer list, detail, and edit journeys
+#### [x] P03-T02: Redesign customer list, detail, and edit journeys
 
 Goals:
 * Staff can find, inspect, create, edit, and delete customers through a coherent responsive flow with readable support-tier/contact presentation and explicit form states.
@@ -419,7 +419,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P03-T03 -->
-#### [ ] P03-T03: Redesign ticket list, filters, and edit journeys
+#### [x] P03-T03: Redesign ticket list, filters, and edit journeys
 
 Goals:
 * Staff can scan and filter tickets, understand status/priority/SLA meaning, and complete create/edit/delete actions through a consistent responsive workflow.
@@ -450,7 +450,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:phase id=P04 -->
-### [ ] P04: Redesign ticket detail and cross-service operational states
+### [x] P04: Redesign ticket detail and cross-service operational states
 
 Goals:
 * Make ticket detail the primary operational workspace, prioritizing SLA, customer, attachments, and activity while making eventual consistency and service failures understandable.
@@ -479,7 +479,7 @@ flowchart LR
 Highlighted work: recompose ticket detail around operational priority while preserving customer lookup, SLA evaluation, attachment policy, activity retrieval, and async processing boundaries.
 
 <!-- rpi:task id=P04-T01 -->
-#### [ ] P04-T01: Recompose ticket detail around operational priority
+#### [x] P04-T01: Recompose ticket detail around operational priority
 
 Goals:
 * Ticket detail immediately communicates identity, customer, status, priority, assignment, and SLA state before secondary content, while retaining all current actions.
@@ -510,7 +510,7 @@ Dependencies:
 * P03-T03.
 
 <!-- rpi:task id=P04-T02 -->
-#### [ ] P04-T02: Make attachment, activity, and SLA states explicit
+#### [x] P04-T02: Make attachment, activity, and SLA states explicit
 
 Goals:
 * Staff can distinguish successful, empty, unavailable, stale, and failed operational data, plus operation-local progress where a real local signal exists, without mistaking eventual consistency or a dependency outage for a completed action.
@@ -542,7 +542,7 @@ Dependencies:
 * P04-T01.
 
 <!-- rpi:phase id=P05 -->
-### [ ] P05: Improve the SLA console and align cross-surface terminology
+### [x] P05: Improve the SLA console and align cross-surface terminology
 
 Goals:
 * Make the Aspire terminal console discoverable and reliable for existing operations, then align its labels and output with the web without creating a second UI or new backend capability.
@@ -572,7 +572,7 @@ flowchart LR
 Highlighted work: improve menu/help/output/error handling and implement only API-backed console journeys that preserve current command compatibility and ownership.
 
 <!-- rpi:task id=P05-T01 -->
-#### [ ] P05-T01: Improve console command discoverability and terminal-safe feedback
+#### [x] P05-T01: Improve console command discoverability and terminal-safe feedback
 
 Goals:
 * Operators can understand available commands, current command state, help/exit behavior, and failures from the Aspire Dashboard terminal without relying on color, cursor control, or undocumented knowledge.
@@ -602,7 +602,7 @@ Dependencies:
 * P01-T02.
 
 <!-- rpi:task id=P05-T02 -->
-#### [ ] P05-T02: Wire existing console commands to API-backed journeys where contracts support them
+#### [x] P05-T02: Wire existing console commands to API-backed journeys where contracts support them
 
 Goals:
 * Console customer/ticket views and sample-data operations are either real, explicitly unsupported with actionable help, or removed from the menu; no placeholder output is presented as live operational data.
@@ -640,7 +640,7 @@ Dependencies:
 * P05-T01.
 
 <!-- rpi:task id=P05-T03 -->
-#### [ ] P05-T03: Align terminology and operational timestamps across web and console
+#### [x] P05-T03: Align terminology and operational timestamps across web and console
 
 Goals:
 * Staff see the same meanings for ticket status, priority, SLA state, support tier, freshness, processing, and identifiers regardless of whether they begin in the web or terminal.
@@ -712,7 +712,7 @@ flowchart LR
 Highlighted work: add and execute the verification matrix, including explicit proof that default template presentation and placeholder success output are absent.
 
 <!-- rpi:task id=P06-T01 -->
-#### [ ] P06-T01: Extend automated regression coverage for preserved journeys
+#### [x] P06-T01: Extend automated regression coverage for preserved journeys
 
 Goals:
 * Existing customer, ticket, SLA, attachment, activity, dashboard, and console contracts remain protected while presentation code changes.

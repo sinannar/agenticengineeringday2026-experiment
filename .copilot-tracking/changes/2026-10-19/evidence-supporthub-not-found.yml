@@ -1,0 +1,37 @@
+- generic [ref=f8e2]:
+  - complementary "Primary navigation" [ref=f8e3]:
+    - link "SupportHub overview" [ref=f8e5] [cursor=pointer]:
+      - /url: ""
+      - generic [aria-hidden] [ref=f8e6]: S
+      - generic [ref=f8e7]:
+        - generic [ref=f8e8]: SupportHub
+        - generic [ref=f8e9]: Operations cockpit
+    - navigation "SupportHub" [ref=f8e10]:
+      - paragraph [ref=f8e11]: Workspace
+      - link "Overview" [ref=f8e12] [cursor=pointer]:
+        - /url: ""
+        - generic [aria-hidden] [ref=f8e13]: ⌂
+      - link "Tickets" [ref=f8e15] [cursor=pointer]:
+        - /url: tickets
+        - generic [aria-hidden] [ref=f8e16]: "#"
+      - link "Customers" [ref=f8e18] [cursor=pointer]:
+        - /url: customers
+        - generic [aria-hidden] [ref=f8e19]: ◎
+    - generic [ref=f8e23]:
+      - strong [ref=f8e24]: Workspace online
+      - generic [ref=f8e25]: Connected to SupportHub services
+  - main [ref=f8e26]:
+    - generic [ref=f8e27]:
+      - generic [ref=f8e28]:
+        - paragraph [ref=f8e29]: Support operations
+        - paragraph [ref=f8e30]: Resolve customer issues with confidence.
+      - link "New ticket" [ref=f8e31] [cursor=pointer]:
+        - /url: tickets/new
+    - article [ref=f8e32]:
+      - status [ref=f8e40]:
+        - generic [aria-hidden] [ref=f8e41]: "?"
+        - generic [ref=f8e42]:
+          - heading "Ticket not found" [level=2] [ref=f8e43]
+          - paragraph [ref=f8e44]: This ticket may have been removed or the link may be out of date.
+          - link "Back to tickets" [ref=f8e46] [cursor=pointer]:
+            - /url: tickets
