@@ -60,8 +60,9 @@ public static class SlaEndpoints
         var result = await sla.ScanAsync(request, cancellationToken);
         var logger = loggerFactory.CreateLogger("SupportHub.Tickets.Api.SlaScan");
         logger.LogInformation(
-            "SLA scan evaluated {EvaluatedCount} tickets and recorded {FailedCount} failures at {EvaluatedAtUtc} with max items {MaxItems}, status {Status}, priority {Priority}, and failure codes {FailureCodes}.",
+            "SLA scan evaluated {EvaluatedCount} tickets {EvaluatedTicketIds} and recorded {FailedCount} failures at {EvaluatedAtUtc} with max items {MaxItems}, status {Status}, priority {Priority}, and failure codes {FailureCodes}.",
             result.EvaluatedCount,
+            result.Items.Select(item => item.TicketId).ToArray(),
             result.FailedCount,
             result.EvaluatedAtUtc,
             request.MaxItems,

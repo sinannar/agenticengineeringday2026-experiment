@@ -13,7 +13,7 @@
 * Declared invocation scope: full plan
 * Completed scope markers: `P01-T01`, `P01-T02`, `P01-T03`, `P02-T01`, `P02-T02`, `P02-T03`, `P03-T01`, `P03-T02`, `P04-T01`, `P04-T02`, `P05-T01`, `P05-T02`, `P05-T03`, `P05-T04`
 * All remaining active-plan markers: None
-* Status basis: SLA implementation, browser validation, focused API/client validation, solution-wide build/test, and Aspire runtime verification are complete.
+* Status basis: SLA implementation, browser validation, focused API/client validation, solution-wide build/test, and Aspire runtime verification are complete, including the accepted review observability fix.
 
 ## Execution Summary
 
@@ -162,6 +162,15 @@ Implementation proceeded in approved plan order. Tickets API behavior, scheduled
 * Behavior or functionality changed: Verified the complete solution build and test graph, healthy Aspire startup for the affected resources, scheduled Worker scans through Tickets API service discovery, and live Blazor SLA rendering.
 * Validation: Restore and build passed; `71` solution tests passed across `3` projects; isolated Aspire runtime reached healthy `ticketsapi`, `sla-worker`, `customersapi`, and `webfrontend`; browser validation displayed the server-provided SLA state and deadline. `supporthub-cli` remained terminal-driven and `NotStarted` during dashboard-only observation.
 
+### Successful scan log correlation
+
+* Related scope: accepted review finding `RV-001`
+* Files:
+  * [src/SupportHub.Tickets.Api/Features/Tickets/SlaEndpoints.cs](../../../src/SupportHub.Tickets.Api/Features/Tickets/SlaEndpoints.cs)
+  * [src/SupportHub.Sla.Worker/Worker.cs](../../../src/SupportHub.Sla.Worker/Worker.cs)
+* Behavior or functionality changed: SLA scan logs now include bounded evaluated-ticket identifier arrays so operators can correlate successful scan results with the aggregate counts and failure codes without exposing secrets.
+* Validation: `rtk dotnet build` passed for Tickets API and SLA Worker; `19` focused SLA tests passed; isolated Aspire reached healthy `ticketsapi` and `sla-worker`; structured logs from both resources contained `EvaluatedTicketIds` arrays for the same successful scan.
+
 ## Implementation-Time Plan Updates
 
 ### Implementation kickoff state
@@ -190,15 +199,15 @@ Implementation proceeded in approved plan order. Tickets API behavior, scheduled
 | `rtk dotnet restore SupportHub.slnx` | `P05-T04` | Passed | `13` projects restored; existing `NU1510` and `NU1902` warnings remain |
 | `rtk dotnet build SupportHub.slnx --no-restore` | `P05-T04` | Passed | `13` projects built with the same existing warnings |
 | `rtk dotnet test SupportHub.slnx --no-restore` | `P05-T04` | Passed | `71` tests passed across `3` projects in `710.3` seconds; existing nullable warnings remain |
-| Aspire resource health/log/trace verification | `P05-T04` | Passed | Isolated Aspire run reached healthy `ticketsapi`, `sla-worker`, `customersapi`, and `webfrontend`; Worker logs showed `POST https+http://ticketsapi/tickets/sla/scan` returning `200` with evaluated/at-risk/breached counts. `supporthub-cli` remained `NotStarted` because it is terminal-driven. |
+| Aspire resource health/log/trace verification | `P05-T04`, `RV-001` | Passed | Isolated Aspire run reached healthy `ticketsapi` and `sla-worker` (also `customersapi` and `webfrontend`); Worker logs showed `POST https+http://ticketsapi/tickets/sla/scan` returning `200` with counts and `EvaluatedTicketIds`; Tickets API logs recorded the same seven IDs. `supporthub-cli` remained `NotStarted` because it is terminal-driven. |
 | Browser validation via `playwright-cli` | `P05-T03` | Passed | Live Ticket Details page displayed `At risk`, `Standard`, deadline, and remaining time for an existing ticket. |
 
 ## Pre-Review Reconciliation
 
 * Plan markers and task-local context: `P01` through `P05-T04` complete.
-* Completed-work entries and handoff prose: Entries recorded through browser validation, Aspire runtime evidence, and the full solution test run.
+* Completed-work entries and handoff prose: Entries recorded through browser validation, Aspire runtime evidence, the full solution test run, and accepted `RV-001` remediation.
 * Validation, blockers, remaining work, and follow-up items: All required feature validation passed; `git diff --check` still reports CRLF carriage returns in modified files.
-* Review readiness: Ready for review, subject to the existing diff-hygiene warning.
+* Review readiness: Ready for review; `RV-001` remediation is validated. The CRLF warning remains a mechanical diff-hygiene consideration.
 
 ## Blockers
 
@@ -223,5 +232,5 @@ Implementation proceeded in approved plan order. Tickets API behavior, scheduled
 * Business alignment entries: None.
 * Planning and critique state: Approved plan with final standard critique Pass.
 * Follow-up items: None.
-* Review readiness or no-handoff reason: Ready for `/rpi-review`; `git diff --check` reports CRLF carriage returns on added lines in modified files, but no functional validation failed.
+* Review readiness or no-handoff reason: Ready for `/rpi-review`; accepted `RV-001` is implemented and validated. `git diff --check` reports CRLF carriage returns on added lines in modified files, but no functional validation failed.
 * Continuation owner: User/manual RPI.

@@ -32,9 +32,10 @@ public sealed class Worker(
             logger.LogInformation("Starting scheduled SLA scan with max items {MaxItems}.", maxItems);
             var result = await scanClient.ScanAsync(new(MaxItems: maxItems), cancellationToken);
             logger.LogInformation(
-                "Scheduled SLA scan completed at {EvaluatedAtUtc}: evaluated {EvaluatedCount}, failed {FailedCount}, at risk {AtRiskCount}, breached {BreachedCount}.",
+                "Scheduled SLA scan completed at {EvaluatedAtUtc}: evaluated {EvaluatedCount} tickets {EvaluatedTicketIds}, failed {FailedCount}, at risk {AtRiskCount}, breached {BreachedCount}.",
                 result.EvaluatedAtUtc,
                 result.EvaluatedCount,
+                result.Items.Select(item => item.TicketId).ToArray(),
                 result.FailedCount,
                 result.Items.Count(item => item.State == SlaState.AtRisk),
                 result.Items.Count(item => item.State == SlaState.Breached));
