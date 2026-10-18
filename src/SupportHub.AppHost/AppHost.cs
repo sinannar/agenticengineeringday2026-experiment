@@ -11,8 +11,22 @@ var builder = DistributedApplication.CreateBuilder(args);
 var cache = builder.AddRedis("cache");
 
 // PostgreSQL - transactional databases
-var postgres = builder.AddPostgres("postgres");
-if (!builder.Configuration.GetValue<bool>("SUPPORTHUB_TEST_MODE"))
+var persistenceTestMode = builder.Configuration.GetValue<bool>("SUPPORTHUB_PERSISTENCE_TEST_MODE");
+var postgresPassword = persistenceTestMode
+    ? builder.AddParameter("supporthub-persistence-test-postgres-password", secret: true)
+    : null;
+var postgres = postgresPassword is null
+    ? builder.AddPostgres("postgres")
+    : builder.AddPostgres("postgres", password: postgresPassword);
+
+if (persistenceTestMode)
+{
+    var volumeName = builder.Configuration["SUPPORTHUB_PERSISTENCE_TEST_VOLUME_NAME"]
+        ?? throw new InvalidOperationException(
+            "SUPPORTHUB_PERSISTENCE_TEST_VOLUME_NAME is required when persistence test mode is enabled.");
+    postgres.WithDataVolume(volumeName);
+}
+else if (!builder.Configuration.GetValue<bool>("SUPPORTHUB_TEST_MODE"))
 {
     postgres.WithDataVolume();
 }
