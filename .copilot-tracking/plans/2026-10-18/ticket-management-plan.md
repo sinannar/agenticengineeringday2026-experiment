@@ -71,7 +71,7 @@ flowchart LR
 The plan turns the current Tickets API shell into a service-owned CRUD surface, wires only the additional Customers API dependency required by the mandatory relationship, and proves the result through real distributed tests and API-backed Blazor workflows.
 
 <!-- rpi:phase id=P01 -->
-### [ ] P01: Establish the ticket domain, contracts, and persistence
+### [x] P01: Establish the ticket domain, contracts, and persistence
 
 Goals:
 * Establish a durable Tickets API model and explicit public contracts so ticket data can be validated, stored in `ticketsdb`, and evolved independently from Customers API.
@@ -112,7 +112,7 @@ flowchart LR
 Highlighted work: `Ticket`, request/response/filter contracts, validation rules, `TicketDbContext`, entity mapping, and the initial migration.
 
 <!-- rpi:task id=P01-T01 -->
-#### [ ] P01-T01: Define ticket domain and API contracts
+#### [x] P01-T01: Define ticket domain and API contracts
 
 Goals:
 * Establish a service-owned ticket representation and stable request/response/filter contracts for CRUD and list filtering.
@@ -143,7 +143,7 @@ Dependencies:
 * None.
 
 <!-- rpi:task id=P01-T02 -->
-#### [ ] P01-T02: Add ticket EF Core persistence and migration
+#### [x] P01-T02: Add ticket EF Core persistence and migration
 
 Goals:
 * Persist tickets in the service-owned `ticketsdb` schema and make local/test startup able to establish that schema deterministically.
@@ -170,7 +170,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:phase id=P02 -->
-### [ ] P02: Implement customer-integrated API behavior and AppHost wiring
+### [x] P02: Implement customer-integrated API behavior and AppHost wiring
 
 Goals:
 * Deliver the complete Tickets API lifecycle and filter surface while enforcing the mandatory customer relationship through Customers API service discovery.
@@ -211,7 +211,7 @@ flowchart LR
 Highlighted work: customer validation client, CRUD/filter endpoints, API error behavior, gated migration startup, and the `ticketsapi -> customersapi` reference/wait edge.
 
 <!-- rpi:task id=P02-T01 -->
-#### [ ] P02-T01: Register service discovery and enforce customer validation
+#### [x] P02-T01: Register service discovery and enforce customer validation
 
 Goals:
 * Make Tickets API reject unknown customer references and dependency failures explicitly while preserving independent service ownership.
@@ -238,7 +238,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:task id=P02-T02 -->
-#### [ ] P02-T02: Implement ticket CRUD and filtering endpoints
+#### [x] P02-T02: Implement ticket CRUD and filtering endpoints
 
 Goals:
 * Expose a complete, deterministic HTTP lifecycle for tickets and support the required status, priority, customer, and assignee filters.
@@ -276,7 +276,7 @@ Dependencies:
 * P02-T01.
 
 <!-- rpi:task id=P02-T03 -->
-#### [ ] P02-T03: Gate Tickets API migration startup for local and test execution
+#### [x] P02-T03: Gate Tickets API migration startup for local and test execution
 
 Goals:
 * Ensure the Tickets API becomes healthy only after its schema is available in development/test while leaving production migration policy explicit and controlled.
@@ -302,7 +302,7 @@ Dependencies:
 * P01-T02.
 
 <!-- rpi:phase id=P03 -->
-### [ ] P03: Add API-backed Blazor ticket workflows
+### [x] P03: Add API-backed Blazor ticket workflows
 
 Goals:
 * Give support staff list/filter, detail, create, and edit workflows without duplicating ticket persistence or business rules in Web.
@@ -343,7 +343,7 @@ flowchart LR
 Highlighted work: typed ticket client, filter/query serialization, ticket pages, navigation, and explicit UI states.
 
 <!-- rpi:task id=P03-T01 -->
-#### [ ] P03-T01: Implement TicketApiClient contracts and operations
+#### [x] P03-T01: Implement TicketApiClient contracts and operations
 
 Goals:
 * Provide a resilient typed client that exposes the Tickets API contract to Blazor without coupling Web to Tickets API persistence types.
@@ -368,7 +368,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P03-T02 -->
-#### [ ] P03-T02: Add ticket list, detail, create, edit, and navigation workflows
+#### [x] P03-T02: Add ticket list, detail, create, edit, and navigation workflows
 
 Goals:
 * Enable support staff to manage tickets through interactive-server Blazor pages with clear loading, empty, validation, not-found, dependency-error, and success states.
@@ -397,7 +397,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:phase id=P04 -->
-### [ ] P04: Prove behavior with focused tests and Aspire runtime verification
+### [x] P04: Prove behavior with focused tests and Aspire runtime verification
 
 Goals:
 * Demonstrate the complete ticket lifecycle, mandatory customer relationship, filtering, persistence, and distributed startup behavior using the repository’s existing test seams.
@@ -438,7 +438,7 @@ flowchart LR
 Highlighted work: focused domain/API tests, real AppHost lifecycle tests, migration/persistence assertions, filter coverage, and build/test/runtime evidence.
 
 <!-- rpi:task id=P04-T01 -->
-#### [ ] P04-T01: Add focused Tickets API validation and contract tests
+#### [x] P04-T01: Add focused Tickets API validation and contract tests
 
 Goals:
 * Cover deterministic ticket validation, mapping, enum behavior, timestamps, and customer-validation outcomes without replacing distributed tests with mocks.
@@ -462,7 +462,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P04-T02 -->
-#### [ ] P04-T02: Extend Aspire integration tests for lifecycle, relationship, filters, and persistence
+#### [x] P04-T02: Extend Aspire integration tests for lifecycle, relationship, filters, and persistence
 
 Goals:
 * Prove the real distributed graph supports ticket CRUD, mandatory customer association, filtering, migrations, and persistence across requests.
@@ -492,7 +492,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P04-T03 -->
-#### [ ] P04-T03: Run solution, targeted, and Aspire verification
+#### [x] P04-T03: Run solution, targeted, and Aspire verification
 
 Goals:
 * Produce implementation evidence that the planned feature builds, passes relevant tests, and reaches expected Aspire resource health without unexpected failures.
@@ -670,7 +670,7 @@ Dependencies:
 
 ## Follow-Up Items
 
-* None
+* Restart persistence across two application starts is not proven by the current test graph because `SUPPORTHUB_TEST_MODE=true` disables the AppHost PostgreSQL data volume. The implementation retains migration and cross-request persistence coverage; production-like volume restart evidence should be added when the test harness supports isolated persistent resources. Owner: downstream validation.
 
 ## Handoff
 

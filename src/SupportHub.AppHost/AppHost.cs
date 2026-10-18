@@ -58,12 +58,19 @@ if (builder.Environment.IsDevelopment())
 var ticketsapi = builder
     .AddProject<Projects.SupportHub_Tickets_Api>("ticketsapi")
     .WithReference(ticketsDb)
+    .WithReference(customersapi)
     .WithReference(blobs)
     .WithReference(serviceBus)
     .WaitFor(ticketsDb)
+    .WaitFor(customersapi)
     .WaitFor(blobs)
     .WaitFor(serviceBus)
     .WithHttpHealthCheck("/health");
+
+if (builder.Environment.IsDevelopment())
+{
+    ticketsapi.WithEnvironment("SUPPORTHUB_APPLY_MIGRATIONS", "true");
+}
 
 // ============================================================
 // Background Workers

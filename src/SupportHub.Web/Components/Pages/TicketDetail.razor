@@ -1,0 +1,84 @@
+@page "/tickets/{Id:guid}"
+@rendermode InteractiveServer
+@inject TicketApiClient TicketApi
+@inject CustomerApiClient CustomerApi
+
+<PageTitle>Ticket details</PageTitle>
+
+@if (_loading)
+{
+    <p role="status">Loading ticket...</p>
+}
+else if (_notFound)
+{
+    <div class="alert alert-warning" role="alert">Ticket not found.</div>
+    <a href="tickets">Back to tickets</a>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+    <a href="tickets">Back to tickets</a>
+}
+else if (_ticket is not null)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@_ticket.Title</h1>
+        <a class="btn btn-primary" href="@($"tickets/{_ticket.Id}/edit")">Edit</a>
+    </div>
+    <dl class="row">
+        <dt class="col-sm-3">Description</dt>
+        <dd class="col-sm-9">@_ticket.Description</dd>
+        <dt class="col-sm-3">Customer</dt>
+        <dd class="col-sm-9">@_customerName</dd>
+        <dt class="col-sm-3">Status</dt>
+        <dd class="col-sm-9">@_ticket.Status</dd>
+        <dt class="col-sm-3">Priority</dt>
+        <dd class="col-sm-9">@_ticket.Priority</dd>
+        <dt class="col-sm-3">Assignee</dt>
+        <dd class="col-sm-9">@(_ticket.Assignee ?? "—")</dd>
+        <dt class="col-sm-3">Created</dt>
+        <dd class="col-sm-9">@_ticket.CreatedAt</dd>
+        <dt class="col-sm-3">Updated</dt>
+        <dd class="col-sm-9">@_ticket.UpdatedAt</dd>
+    </dl>
+    <a href="tickets">Back to tickets</a>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private TicketModel? _ticket;
+    private string _customerName = "Customer unavailable";
+    private bool _loading = true;
+    private bool _notFound;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _notFound = false;
+        _error = null;
+        try
+        {
+            _ticket = await TicketApi.GetTicketAsync(Id);
+            _notFound = _ticket is null;
+            if (_ticket is not null)
+            {
+                var customer = await CustomerApi.GetCustomerAsync(_ticket.CustomerId);
+                _customerName = customer?.Name ?? "Customer unavailable";
+            }
+        }
+        catch (TicketApiException exception)
+        {
+            _error = exception.Message;
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

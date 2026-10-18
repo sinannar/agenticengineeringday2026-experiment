@@ -1,0 +1,153 @@
+@page "/tickets"
+@rendermode InteractiveServer
+@inject TicketApiClient TicketApi
+@inject CustomerApiClient CustomerApi
+
+<PageTitle>Tickets</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Tickets</h1>
+    <a class="btn btn-primary" href="tickets/new">Add ticket</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label" for="ticket-status-filter">Status</label>
+                <InputSelect id="ticket-status-filter" class="form-select" @bind-Value="_status">
+                    <option value="">All statuses</option>
+                    @foreach (var status in Enum.GetValues<TicketStatusModel>())
+                    {
+                        <option value="@status">@status</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="ticket-priority-filter">Priority</label>
+                <InputSelect id="ticket-priority-filter" class="form-select" @bind-Value="_priority">
+                    <option value="">All priorities</option>
+                    @foreach (var priority in Enum.GetValues<TicketPriorityModel>())
+                    {
+                        <option value="@priority">@priority</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="ticket-customer-filter">Customer</label>
+                <InputSelect id="ticket-customer-filter" class="form-select" @bind-Value="_customerId">
+                    <option value="">All customers</option>
+                    @foreach (var customer in _customers)
+                    {
+                        <option value="@customer.Id">@customer.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="ticket-assignee-filter">Assignee</label>
+                <InputText id="ticket-assignee-filter" class="form-control" @bind-Value="_assignee" />
+            </div>
+        </div>
+        <button class="btn btn-secondary mt-3" @onclick="LoadTicketsAsync" disabled="@_loading">Apply filters</button>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <p role="status">Loading tickets...</p>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+    <button class="btn btn-secondary" @onclick="LoadTicketsAsync">Retry</button>
+}
+else if (_tickets.Count == 0)
+{
+    <div class="alert alert-info">No tickets found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Assignee</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ticket in _tickets)
+                {
+                    <tr>
+                        <td><a href="@($"tickets/{ticket.Id}")">@ticket.Title</a></td>
+                        <td>@CustomerName(ticket.CustomerId)</td>
+                        <td>@ticket.Status</td>
+                        <td>@ticket.Priority</td>
+                        <td>@(ticket.Assignee ?? "—")</td>
+                        <td><a class="btn btn-sm btn-outline-secondary" href="@($"tickets/{ticket.Id}/edit")">Edit</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<TicketModel> _tickets = [];
+    private IReadOnlyList<CustomerModel> _customers = [];
+    private TicketStatusModel? _status;
+    private TicketPriorityModel? _priority;
+    private Guid? _customerId;
+    private string? _assignee;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+        await LoadTicketsAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            _customers = await CustomerApi.GetCustomersAsync();
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private async Task LoadTicketsAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _tickets = await TicketApi.GetTicketsAsync(new TicketFilterModel
+            {
+                Status = _status,
+                Priority = _priority,
+                CustomerId = _customerId,
+                Assignee = _assignee
+            });
+        }
+        catch (TicketApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string CustomerName(Guid customerId) =>
+        _customers.FirstOrDefault(x => x.Id == customerId)?.Name ?? "Customer unavailable";
+}
