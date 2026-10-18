@@ -87,7 +87,7 @@ flowchart LR
 The plan changes the existing per-ticket/capped-scan shape into one authoritative dashboard snapshot, adds explicit Redis freshness behavior, and turns existing distributed test seams into full-journey and UI evidence.
 
 <!-- rpi:phase id=P01 -->
-### [ ] P01: Establish the authoritative dashboard summary contract
+### [x] P01: Establish the authoritative dashboard summary contract
 
 Goals:
 * Define an additive Tickets API contract that represents complete ticket counts and SLA risk at one evaluation timestamp without exposing persistence entities or moving customer ownership.
@@ -113,7 +113,7 @@ flowchart LR
 Highlighted work: add the dashboard summary contract and its Tickets API aggregation boundary while retaining Customers API support-tier ownership.
 
 <!-- rpi:task id=P01-T01 -->
-#### [ ] P01-T01: Define dashboard summary contracts and metric semantics
+#### [x] P01-T01: Define dashboard summary contracts and metric semantics
 
 Goals:
 * Make the dashboard wire contract explicit enough that Web, tests, and future operational clients agree on open, status, priority, at-risk, breached, failure, and freshness semantics; partial API snapshots are not permitted.
@@ -157,7 +157,7 @@ Dependencies:
 * None.
 
 <!-- rpi:task id=P01-T02 -->
-#### [ ] P01-T02: Implement whole-population ticket and SLA aggregation
+#### [x] P01-T02: Implement whole-population ticket and SLA aggregation
 
 Goals:
 * Return authoritative dashboard metrics for the complete ticket population while preserving bounded downstream customer lookups and explicit failure behavior.
@@ -217,7 +217,7 @@ flowchart LR
 Highlighted work: add the typed summary client, dashboard page/components, and Redis cache policy at the Web read boundary.
 
 <!-- rpi:task id=P02-T01 -->
-#### [ ] P02-T01: Add the typed dashboard client and support dashboard page
+#### [x] P02-T01: Add the typed dashboard client and support dashboard page
 
 Goals:
 * Render a support dashboard that presents authoritative metrics and helps staff understand the freshness and quality of the snapshot.
@@ -306,7 +306,7 @@ flowchart LR
 Highlighted work: improve readiness and telemetry surfaces around the dashboard path while retaining the existing ServiceDefaults conventions.
 
 <!-- rpi:task id=P03-T01 -->
-#### [ ] P03-T01: Strengthen dependency readiness and AppHost health wiring
+#### [x] P03-T01: Strengthen dependency readiness and AppHost health wiring
 
 Goals:
 * Make resource readiness and dependency failures visible to Aspire and callers while preserving separate liveness semantics.
@@ -424,7 +424,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P04-T02 -->
-#### [ ] P04-T02: Add one bounded Aspire full-journey integration test
+#### [x] P04-T02: Add one bounded Aspire full-journey integration test
 
 Goals:
 * Demonstrate that the distributed application supports the requested customer-to-ticket-to-attachment-to-audit-to-SLA workflow and that the dashboard summary reflects the resulting state.
@@ -454,7 +454,7 @@ Dependencies:
 * P03-T01.
 
 <!-- rpi:task id=P04-T03 -->
-#### [ ] P04-T03: Add focused browser-level dashboard verification
+#### [x] P04-T03: Add focused browser-level dashboard verification
 
 Goals:
 * Verify the support dashboard is usable in a real browser against the Aspire-discovered Web endpoint.
@@ -511,7 +511,7 @@ flowchart LR
 Highlighted work: document the exact operational path and evidence without creating a separate undocumented support process.
 
 <!-- rpi:task id=P05-T01 -->
-#### [ ] P05-T01: Document operational startup and known limitations
+#### [x] P05-T01: Document operational startup and known limitations
 
 Goals:
 * Make local startup and diagnosis reproducible for contributors and reviewers of the stacked PR.

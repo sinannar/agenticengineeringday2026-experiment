@@ -107,7 +107,9 @@ ticketsapi.WithEnvironment(
 // SLA Worker - monitors ticket SLA deadlines
 builder.AddProject<Projects.SupportHub_Sla_Worker>("sla-worker")
     .WithReference(ticketsapi)
-    .WaitFor(ticketsapi);
+    .WaitFor(ticketsapi)
+    .WithHttpEndpoint()
+    .WithHttpHealthCheck("/health");
 
 // ============================================================
 // Interactive Operations CLI

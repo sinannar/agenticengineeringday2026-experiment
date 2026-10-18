@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.AddRedisClient("cache");
 builder.AddRedisOutputCache("cache");
+builder.Services.AddSingleton<DashboardSummaryCache>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
