@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>Support dashboard</h1>
-    @if (_summary is not null)
+    @if (_dashboard is not null)
     {
         <small class="text-muted" aria-label="Dashboard freshness">
             @FreshnessLabel
@@ -14,7 +14,7 @@
     }
 </div>
 
-@if (_loading)
+@if (_loading && _dashboard is null)
 {
     <p role="status">Loading dashboard metrics...</p>
 }
@@ -23,7 +23,7 @@ else if (_error is not null)
     <div class="alert alert-danger" role="alert">@_error</div>
     <button class="btn btn-secondary" @onclick="LoadAsync">Retry</button>
 }
-else if (_summary is null || _summary.TotalTickets == 0)
+else if (_dashboard is null || _dashboard.Summary.TotalTickets == 0)
 {
     <div class="alert alert-info" role="status">
         No tickets are available yet. Create a ticket to populate the dashboard.
@@ -31,11 +31,27 @@ else if (_summary is null || _summary.TotalTickets == 0)
 }
 else
 {
+    @if (_loading)
+    {
+        <p role="status">Refreshing dashboard metrics...</p>
+    }
+
+    @if (_dashboard.IsStale)
+    {
+        <div class="alert alert-warning" role="status">
+            Dashboard data is cached and may be stale. Last evaluated
+            @_dashboard.Summary.EvaluatedAtUtc.ToLocalTime().ToString("g").
+            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="LoadAsync">
+                Refresh
+            </button>
+        </div>
+    }
+
     <div class="row g-3 mb-4">
-        <MetricCard Title="Open tickets" Value="@_summary.OpenTickets" Tone="primary" />
-        <MetricCard Title="At-risk SLAs" Value="@_summary.AtRiskSlaTickets" Tone="warning" />
-        <MetricCard Title="Breached SLAs" Value="@_summary.BreachedSlaTickets" Tone="danger" />
-        <MetricCard Title="Total tickets" Value="@_summary.TotalTickets" Tone="secondary" />
+        <MetricCard Title="Open tickets" Value="@_dashboard.Summary.OpenTickets" Tone="primary" />
+        <MetricCard Title="At-risk SLAs" Value="@_dashboard.Summary.AtRiskSlaTickets" Tone="warning" />
+        <MetricCard Title="Breached SLAs" Value="@_dashboard.Summary.BreachedSlaTickets" Tone="danger" />
+        <MetricCard Title="Total tickets" Value="@_dashboard.Summary.TotalTickets" Tone="secondary" />
     </div>
 
     <div class="row g-4">
@@ -47,7 +63,7 @@ else
                         <tr><th scope="col">Status</th><th scope="col">Count</th></tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in _summary.StatusBreakdown)
+                        @foreach (var item in _dashboard.Summary.StatusBreakdown)
                         {
                             <tr><th scope="row">@item.Status</th><td>@item.Count</td></tr>
                         }
@@ -63,7 +79,7 @@ else
                         <tr><th scope="col">Priority</th><th scope="col">Count</th></tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in _summary.PriorityBreakdown)
+                        @foreach (var item in _dashboard.Summary.PriorityBreakdown)
                         {
                             <tr><th scope="row">@item.Priority</th><td>@item.Count</td></tr>
                         }
@@ -75,14 +91,16 @@ else
 }
 
 @code {
-    private DashboardSummaryModel? _summary;
+    private DashboardSummaryReadModel? _dashboard;
     private bool _loading = true;
     private string? _error;
 
     private string FreshnessLabel =>
-        _summary is null
+        _dashboard is null
             ? string.Empty
-            : $"Evaluated {_summary.EvaluatedAtUtc.ToLocalTime():g}";
+            : _dashboard.IsCached
+                ? $"Evaluated {_dashboard.Summary.EvaluatedAtUtc.ToLocalTime():g}; cached {_dashboard.CacheAge.TotalSeconds:0.#}s ago"
+                : $"Evaluated {_dashboard.Summary.EvaluatedAtUtc.ToLocalTime():g}; fresh";
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -92,11 +110,11 @@ else
         _error = null;
         try
         {
-            _summary = await TicketApi.GetDashboardSummaryAsync();
+            _dashboard = await TicketApi.GetDashboardSummaryAsync();
         }
         catch (TicketApiException exception)
         {
-            _summary = null;
+            _dashboard = null;
             _error = exception.Message;
         }
         finally

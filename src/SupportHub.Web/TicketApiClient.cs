@@ -46,13 +46,16 @@ public class TicketApiClient(
         return await GetRequiredAsync<IReadOnlyList<TicketModel>>(path, cancellationToken);
     }
 
-    public async Task<DashboardSummaryModel> GetDashboardSummaryAsync(
+    public async Task<DashboardSummaryReadModel> GetDashboardSummaryAsync(
         CancellationToken cancellationToken = default)
     {
-        var cached = await dashboardCache.GetAsync(cancellationToken);
+        var cached = await dashboardCache.GetWithMetadataAsync(cancellationToken);
         if (cached is not null)
         {
-            return cached;
+            return new(
+                cached.Summary,
+                IsCached: true,
+                cached.Age);
         }
 
         var summary = await GetRequiredAsync<DashboardSummaryModel>(
@@ -64,7 +67,7 @@ public class TicketApiClient(
         }
 
         await dashboardCache.SetAsync(summary, cancellationToken);
-        return summary;
+        return new(summary, IsCached: false, CacheAge: TimeSpan.Zero);
     }
 
     public async Task<TicketModel?> GetTicketAsync(Guid id, CancellationToken cancellationToken = default)
@@ -294,6 +297,15 @@ public sealed record DashboardSummaryModel(
     int AtRiskSlaTickets,
     int BreachedSlaTickets,
     DashboardDataQualityModel DataQuality);
+
+public sealed record DashboardSummaryReadModel(
+    DashboardSummaryModel Summary,
+    bool IsCached,
+    TimeSpan CacheAge)
+{
+    public bool IsStale =>
+        IsCached && CacheAge >= TimeSpan.FromTicks(DashboardSummaryCache.MaximumAge.Ticks / 2);
+}
 
 public sealed record DashboardStatusBreakdownModel(TicketStatusModel Status, int Count);
 

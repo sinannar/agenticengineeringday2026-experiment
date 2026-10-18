@@ -34,6 +34,25 @@ public sealed class DashboardSummaryCacheTests
     }
 
     [Fact]
+    public async Task GetWithMetadata_ReturnsCacheAgeForFreshnessPresentation()
+    {
+        var store = new FakeCacheStore();
+        var cache = CreateCache(store);
+        var summary = CreateSummary();
+
+        await cache.SetAsync(summary, CancellationToken.None);
+        var result = await cache.GetWithMetadataAsync(CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(summary.EvaluatedAtUtc, result!.Summary.EvaluatedAtUtc);
+        Assert.Equal(summary.TotalTickets, result.Summary.TotalTickets);
+        Assert.Equal(summary.OpenTickets, result.Summary.OpenTickets);
+        Assert.Equal(summary.StatusBreakdown, result.Summary.StatusBreakdown);
+        Assert.Equal(summary.PriorityBreakdown, result.Summary.PriorityBreakdown);
+        Assert.InRange(result.Age, TimeSpan.Zero, DashboardSummaryCache.MaximumAge);
+    }
+
+    [Fact]
     public async Task ExpiredEntry_IsDeletedAndTreatedAsMiss()
     {
         var store = new FakeCacheStore

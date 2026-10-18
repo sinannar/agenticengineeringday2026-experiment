@@ -18,6 +18,13 @@ public sealed class DashboardSummaryCache(
 
     public async Task<DashboardSummaryModel?> GetAsync(CancellationToken cancellationToken)
     {
+        var cached = await GetWithMetadataAsync(cancellationToken);
+        return cached?.Summary;
+    }
+
+    public async Task<DashboardSummaryCacheHit?> GetWithMetadataAsync(
+        CancellationToken cancellationToken)
+    {
         try
         {
             var value = await store.GetAsync(Key, cancellationToken);
@@ -37,7 +44,9 @@ public sealed class DashboardSummaryCache(
 
             logger.LogDebug("Dashboard summary cache hit with age {CacheAgeSeconds} seconds.",
                 (DateTimeOffset.UtcNow - entry.StoredAtUtc).TotalSeconds);
-            return entry.Summary;
+            return new DashboardSummaryCacheHit(
+                entry.Summary,
+                DateTimeOffset.UtcNow - entry.StoredAtUtc);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -98,6 +107,10 @@ public sealed class DashboardSummaryCache(
         DateTimeOffset StoredAtUtc,
         DashboardSummaryModel Summary);
 }
+
+public sealed record DashboardSummaryCacheHit(
+    DashboardSummaryModel Summary,
+    TimeSpan Age);
 
 public interface IDashboardSummaryCacheStore
 {

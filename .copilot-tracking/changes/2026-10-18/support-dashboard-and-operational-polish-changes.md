@@ -12,15 +12,39 @@
 
 * Status: Complete
 * Declared invocation scope: full plan
-* Completed scope markers: `P01-T01`, `P01-T02`, `P02`, `P03`, `P04`, `P05-T01`
+* Completed scope markers: `P01-T01`, `P01-T02`, `P02`, `P03`, `P04`, `P05-T01`, `P05-T02`
 * All remaining active-plan markers: None
-* Status basis: Feature implementation, focused contract/aggregation/cache/failure coverage, distributed diagnostics, browser verification, operational documentation, and the final post-change full-suite/runtime gate are complete.
+* Status basis: Original plan execution and both accepted review remediations are complete; targeted and final validation passed.
 
 ## Execution Summary
 
-Implementation is in progress. The Tickets API now exposes the additive contracts and dependency boundary needed for an authoritative dashboard summary.
+Implementation completed two accepted review findings: explicit stale/refreshing dashboard presentation and internally consistent dashboard aggregation reads.
 
 ## Completed Work
+
+### Resuming accepted review findings
+
+* Related phase or task: `P02-T01` / `P01-T02`
+* Files:
+  * [src/SupportHub.Web/Components/Pages/Home.razor](../../../src/SupportHub.Web/Components/Pages/Home.razor)
+  * [src/SupportHub.Web/TicketApiClient.cs](../../../src/SupportHub.Web/TicketApiClient.cs)
+  * [src/SupportHub.Tickets.Api/Features/Tickets/DashboardSummaryService.cs](../../../src/SupportHub.Tickets.Api/Features/Tickets/DashboardSummaryService.cs)
+  * [tests/SupportHub.Tickets.Api.Tests/DashboardSummaryServiceTests.cs](../../../tests/SupportHub.Tickets.Api.Tests/DashboardSummaryServiceTests.cs)
+* Behavior or functionality changed: The dashboard now exposes cached/fresh age metadata, renders stale and refreshing states with an accessible refresh action, and the Tickets API materializes one bounded ticket population before deriving all totals and breakdowns.
+* Validation: Targeted aggregation tests passed; cache tests passed; Web build passed. The final solution/runtime gate remains.
+
+### Correcting stale dashboard presentation and snapshot consistency
+
+* Related phase or task: `P02-T01` / `P01-T02`
+* Files:
+  * [src/SupportHub.Web/Components/Pages/Home.razor](../../../src/SupportHub.Web/Components/Pages/Home.razor)
+  * [src/SupportHub.Web/DashboardSummaryCache.cs](../../../src/SupportHub.Web/DashboardSummaryCache.cs)
+  * [src/SupportHub.Web/TicketApiClient.cs](../../../src/SupportHub.Web/TicketApiClient.cs)
+  * [src/SupportHub.Tickets.Api/Features/Tickets/DashboardSummaryService.cs](../../../src/SupportHub.Tickets.Api/Features/Tickets/DashboardSummaryService.cs)
+  * [tests/SupportHub.AppHost.Tests/DashboardSummaryCacheTests.cs](../../../tests/SupportHub.AppHost.Tests/DashboardSummaryCacheTests.cs)
+  * [tests/SupportHub.Tickets.Api.Tests/DashboardSummaryServiceTests.cs](../../../tests/SupportHub.Tickets.Api.Tests/DashboardSummaryServiceTests.cs)
+* Behavior or functionality changed: Cache reads now expose age metadata to the typed dashboard result; the UI distinguishes fresh, cached/stale, and refreshing states. Dashboard totals, status counts, priority counts, and SLA evaluation are derived from one bounded materialized read rather than separate count/list generations.
+* Validation: `DashboardSummaryServiceTests` passed with 4 tests; `DashboardSummaryCacheTests` passed with 6 tests; Web build passed with 0 errors and 0 warnings.
 
 ### Implementing whole-population dashboard aggregation
 
@@ -163,13 +187,20 @@ Implementation is in progress. The Tickets API now exposes the additive contract
 | Final live dashboard request | `P05-T02` | Passed | `GET /tickets/dashboard-summary` returned `dataQuality: Complete` with current ticket, open, breakdown, and SLA counts. |
 | Final dashboard logs and traces | `P05-T02` | Passed | Aspire logs showed evaluation and Customers API calls; live request produced the dashboard HTTP trace and the custom `dashboard.summary` span evidence. |
 | Final browser endpoint check | `P05-T02` | Passed | Aspire-discovered Web endpoint contained dashboard heading and open/at-risk/breached metric markers. |
+| Review remediation aggregation tests | `RV-002` | Passed | `DashboardSummaryServiceTests`; 4 tests passed, including total/breakdown invariants after single-query materialization. |
+| Review remediation cache tests | `RV-001` | Passed | `DashboardSummaryCacheTests`; 6 tests passed, including cache age metadata. |
+| Review remediation Web build | `RV-001` | Passed | `dotnet build src/SupportHub.Web/SupportHub.Web.csproj --no-restore`; 0 errors and 0 warnings. |
+| Post-remediation solution build | `RV-001` / `RV-002` | Passed | `dotnet build SupportHub.slnx --no-restore`; 0 errors and four existing warnings. |
+| Post-remediation full solution tests | `RV-001` / `RV-002` | Passed | `dotnet test SupportHub.slnx --no-restore --no-build`; 84 tests passed. |
+| Post-remediation Aspire health and dashboard request | `RV-001` / `RV-002` | Passed | All six required resources healthy; live dashboard request returned complete data. |
+| Post-remediation browser stale/refresh verification | `RV-001` | Passed | Browser showed cached/stale warning and Refresh action, then showed fresh state after refresh. |
 
 ## Pre-Review Reconciliation
 
 * Plan markers and task-local context: all markers from `P01-T01` through `P05-T02` are checked.
 * Completed-work entries and handoff prose: entries cover API aggregation, Web UI, Redis policy, worker health, distributed diagnostics, focused tests, browser verification, operational documentation, and the final gate.
-* Validation, blockers, remaining work, and follow-up items: restore, build, full tests, Aspire health, live dashboard, logs, traces, and browser checks all passed; no remaining work is recorded.
-* Review readiness: ready for `/rpi-review`.
+* Validation, blockers, remaining work, and follow-up items: prior evidence remains valid; post-remediation targeted tests, Web build, solution build, 84-test full suite, Aspire health/request/logs, and browser stale/refresh checks passed.
+* Review readiness: ready for `/rpi-review`; both accepted findings are implemented and the post-remediation validation gate passed.
 
 ## Blockers
 
@@ -177,6 +208,7 @@ Implementation is in progress. The Tickets API now exposes the additive contract
 
 ## Remaining Work
 
+* None.
 
 ## Follow-Up Items
 
@@ -186,8 +218,8 @@ Implementation is in progress. The Tickets API now exposes the additive contract
 ## Return-to-Caller State
 
 * Implementation execution status: Complete
-* Declared scope and markers: full plan; all plan markers completed
-* Validation coverage: solution restore/build, 83 full-suite tests, focused aggregation/cache tests, full-journey integration, dashboard integration, Aspire health/log/trace checks, browser verification, and documentation
+* Declared scope and markers: full plan; original plan markers remain checked, and accepted review findings `RV-001` and `RV-002` are implemented
+* Validation coverage: targeted aggregation/cache tests, Web build, solution build, 84 full-suite tests, Aspire health/log/trace checks, live dashboard request, and browser stale/refresh verification passed
 * Blockers: none
 * Current plan updates: `P02`, `P03`, `P04`, and `P05` were checked after focused and final evidence was added
 * Business alignment entries: none; no BRD, PRD, or ADR is cited by the plan

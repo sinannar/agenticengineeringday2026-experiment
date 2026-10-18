@@ -115,7 +115,9 @@ The dashboard summary is computed authoritatively by `SupportHub.Tickets.Api` th
 `GET /tickets/dashboard-summary`. The Web frontend caches successful summaries in Redis
 under `dashboard-summary:v1` for at most 30 seconds. Web-originated customer and ticket
 mutations invalidate the entry; writers outside the Web frontend may therefore leave a
-summary stale for up to the TTL.
+summary stale for up to the TTL. The dashboard displays whether the result is fresh or
+cached/stale, shows the evaluation time, and provides an accessible refresh action for
+stale cached data.
 
 Dashboard aggregation fails closed when the Customers API cannot provide support tiers,
 when a dependency times out, or when the ticket population exceeds 10,000 records.

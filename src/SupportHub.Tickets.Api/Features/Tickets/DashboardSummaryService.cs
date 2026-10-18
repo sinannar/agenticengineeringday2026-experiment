@@ -19,18 +19,19 @@ public sealed class DashboardSummaryService(
     {
         using var activity = DashboardTelemetry.ActivitySource.StartActivity("dashboard.summary");
         var startedAt = Stopwatch.GetTimestamp();
-        var ticketCount = await db.Tickets.AsNoTracking().CountAsync(cancellationToken);
-        if (ticketCount > MaximumTicketPopulation)
+        var tickets = await db.Tickets
+            .AsNoTracking()
+            .OrderBy(ticket => ticket.Id)
+            .Take(MaximumTicketPopulation + 1)
+            .ToListAsync(cancellationToken);
+        if (tickets.Count > MaximumTicketPopulation)
         {
             throw new DashboardSummaryUnavailableException(
                 "dashboard-population-limit-exceeded",
                 $"The dashboard supports up to {MaximumTicketPopulation} tickets.");
         }
 
-        var tickets = await db.Tickets
-            .AsNoTracking()
-            .OrderBy(ticket => ticket.Id)
-            .ToListAsync(cancellationToken);
+        var ticketCount = tickets.Count;
         var evaluatedAt = timeProvider.GetUtcNow();
         var statusCounts = Enum.GetValues<TicketStatus>()
             .Select(status => new DashboardStatusBreakdown(

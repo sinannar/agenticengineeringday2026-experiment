@@ -31,6 +31,8 @@ public sealed class DashboardSummaryServiceTests
         Assert.Equal(1, result.BreachedSlaTickets);
         Assert.Equal(4, result.StatusBreakdown.Sum(item => item.Count));
         Assert.Equal(4, result.PriorityBreakdown.Sum(item => item.Count));
+        Assert.Equal(result.TotalTickets, result.StatusBreakdown.Sum(item => item.Count));
+        Assert.Equal(result.TotalTickets, result.PriorityBreakdown.Sum(item => item.Count));
     }
 
     [Fact]
