@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SupportHub.Tickets.Api.Features.Attachments;
 
 namespace SupportHub.Tickets.Api.Features.Tickets;
 
@@ -156,12 +157,23 @@ public static class TicketEndpoints
     private static async Task<IResult> DeleteAsync(
         Guid id,
         TicketDbContext db,
+        IAttachmentBlobStore blobStore,
         CancellationToken cancellationToken)
     {
         var ticket = await db.Tickets.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (ticket is null)
         {
             return Results.NotFound();
+        }
+
+        var cleanupResult = await AttachmentEndpoints.CleanupForTicketAsync(
+            id,
+            db,
+            blobStore,
+            cancellationToken);
+        if (cleanupResult is not null)
+        {
+            return cleanupResult;
         }
 
         db.Tickets.Remove(ticket);

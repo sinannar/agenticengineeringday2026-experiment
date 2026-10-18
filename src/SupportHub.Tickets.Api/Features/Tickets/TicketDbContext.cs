@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using SupportHub.Tickets.Api.Features.Attachments;
 
 namespace SupportHub.Tickets.Api.Features.Tickets;
 
 public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) : DbContext(options)
 {
     public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<Attachment> Attachments => Set<Attachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,5 +26,15 @@ public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) :
         ticket.HasIndex(x => x.Priority);
         ticket.HasIndex(x => x.CustomerId);
         ticket.HasIndex(x => x.Assignee);
+
+        var attachment = modelBuilder.Entity<Attachment>();
+        attachment.HasKey(x => x.Id);
+        attachment.Property(x => x.BlobName).HasMaxLength(512).IsRequired();
+        attachment.Property(x => x.OriginalFileName).HasMaxLength(255).IsRequired();
+        attachment.Property(x => x.ContentType).HasMaxLength(128).IsRequired();
+        attachment.Property(x => x.Size).IsRequired();
+        attachment.Property(x => x.CreatedAt).IsRequired();
+        attachment.HasIndex(x => x.BlobName).IsUnique();
+        attachment.HasIndex(x => x.TicketId);
     }
 }

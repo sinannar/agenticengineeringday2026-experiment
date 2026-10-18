@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using SupportHub.Tickets.Api.Features.Attachments;
 using SupportHub.Tickets.Api.Features.Tickets;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,7 @@ builder.Services.AddHttpClient<CustomerLookupClient>(client =>
 {
     client.BaseAddress = new("https+http://customersapi");
 });
+builder.Services.AddSingleton<IAttachmentBlobStore, AzureAttachmentBlobStore>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -42,6 +44,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/hello", () => "Hello World! from Tickets Api");
 
 app.MapTicketEndpoints();
+app.MapAttachmentEndpoints();
 app.MapDefaultEndpoints();
 
 app.Run();

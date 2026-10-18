@@ -1,0 +1,405 @@
+using System.Net;
+using Azure;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
+using SupportHub.Tickets.Api.Features.Tickets;
+
+namespace SupportHub.Tickets.Api.Features.Attachments;
+
+public static class AttachmentEndpoints
+{
+    public static IEndpointRouteBuilder MapAttachmentEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/tickets/{ticketId:guid}/attachments").WithTags("Attachments");
+
+        group.MapGet("", ListAsync);
+        group.MapPost("", UploadAsync);
+        group.MapMethods("/{attachmentId:guid}/content", ["HEAD"], HeadAsync);
+        group.MapGet("/{attachmentId:guid}/content", DownloadAsync);
+        group.MapDelete("/{attachmentId:guid}", DeleteAsync);
+
+        return endpoints;
+    }
+
+    private static async Task<IResult> ListAsync(
+        Guid ticketId,
+        TicketDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (!await TicketExistsAsync(ticketId, db, cancellationToken))
+        {
+            return Results.NotFound();
+        }
+
+        var attachments = await db.Attachments
+            .AsNoTracking()
+            .Where(x => x.TicketId == ticketId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenBy(x => x.Id)
+            .Select(x => AttachmentPolicy.ToResponse(x))
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(attachments);
+    }
+
+    private static async Task<IResult> UploadAsync(
+        Guid ticketId,
+        HttpRequest request,
+        TicketDbContext db,
+        IAttachmentBlobStore blobStore,
+        CancellationToken cancellationToken)
+    {
+        if (!await TicketExistsAsync(ticketId, db, cancellationToken))
+        {
+            return Results.NotFound();
+        }
+
+        if (request.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } bodySizeFeature)
+        {
+            bodySizeFeature.MaxRequestBodySize = AttachmentPolicy.MaximumRequestSize;
+        }
+
+        if (!AttachmentPolicy.TryGetMultipartBoundary(request.ContentType, out var boundary))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["file"] = ["The request must be multipart/form-data with one file."]
+            });
+        }
+
+        var reader = new MultipartReader(boundary, request.Body)
+        {
+            HeadersCountLimit = 16,
+            HeadersLengthLimit = 16 * 1024,
+            BodyLengthLimit = AttachmentPolicy.MaximumRequestSize
+        };
+
+        MultipartSection? fileSection = null;
+        try
+        {
+            while (await reader.ReadNextSectionAsync(cancellationToken) is { } section)
+            {
+                if (!ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var disposition) ||
+                    !string.Equals(disposition.DispositionType.Value, "form-data", StringComparison.OrdinalIgnoreCase) ||
+                    disposition.FileName.Value is null && disposition.FileNameStar.Value is null)
+                {
+                    continue;
+                }
+
+                if (fileSection is not null)
+                {
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        ["file"] = ["Only one file may be uploaded at a time."]
+                    });
+                }
+
+                fileSection = section;
+                break;
+            }
+        }
+        catch (InvalidDataException exception)
+        {
+            return AttachmentPolicy.TooLarge(exception.Message);
+        }
+
+        if (fileSection is null ||
+            !ContentDispositionHeaderValue.TryParse(fileSection.ContentDisposition, out var fileDisposition))
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["file"] = ["A file is required."]
+            });
+        }
+
+        var fileName = fileDisposition.FileNameStar.Value ?? fileDisposition.FileName.Value;
+        var contentType = fileSection.ContentType;
+        var attachmentId = Guid.NewGuid();
+        var blobName = AttachmentPolicy.BlobName(ticketId, attachmentId);
+        var countingStream = new CountingReadStream(fileSection.Body, AttachmentPolicy.MaximumFileSize);
+        var uploaded = false;
+
+        try
+        {
+            await blobStore.EnsureContainerAsync(cancellationToken);
+            await blobStore.UploadAsync(blobName, countingStream, contentType ?? string.Empty, cancellationToken);
+            uploaded = true;
+        }
+        catch (AttachmentTooLargeException exception)
+        {
+            var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                blobStore,
+                blobName,
+                cancellationToken);
+            return cleanupFailure ?? AttachmentPolicy.TooLarge(exception.Message);
+        }
+        catch (RequestFailedException exception)
+        {
+            var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                blobStore,
+                blobName,
+                cancellationToken);
+            return cleanupFailure ?? AttachmentFailureHandling.StorageProblem("upload", exception);
+        }
+
+        if (!AttachmentPolicy.TryValidate(
+                fileName,
+                contentType,
+                countingStream.BytesRead,
+                out var safeFileName,
+                out var validationError))
+        {
+            if (uploaded)
+            {
+                var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                    blobStore,
+                    blobName,
+                    cancellationToken);
+                if (cleanupFailure is not null)
+                {
+                    return cleanupFailure;
+                }
+            }
+
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["file"] = [validationError]
+            });
+        }
+
+        while (await reader.ReadNextSectionAsync(cancellationToken) is { } extraSection)
+        {
+            if (ContentDispositionHeaderValue.TryParse(extraSection.ContentDisposition, out var extraDisposition) &&
+                string.Equals(extraDisposition.DispositionType.Value, "form-data", StringComparison.OrdinalIgnoreCase) &&
+                (extraDisposition.FileName.Value is not null || extraDisposition.FileNameStar.Value is not null))
+            {
+                var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                    blobStore,
+                    blobName,
+                    cancellationToken);
+                if (cleanupFailure is not null)
+                {
+                    return cleanupFailure;
+                }
+
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    ["file"] = ["Only one file may be uploaded at a time."]
+                });
+            }
+        }
+
+        var attachment = new Attachment
+        {
+            Id = attachmentId,
+            TicketId = ticketId,
+            BlobName = blobName,
+            OriginalFileName = safeFileName,
+            ContentType = contentType!,
+            Size = countingStream.BytesRead,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        db.Attachments.Add(attachment);
+        var metadataSaveFailure = await AttachmentFailureHandling.SaveMetadataWithCompensationAsync(
+            () => db.SaveChangesAsync(cancellationToken),
+            blobStore,
+            blobName,
+            cancellationToken);
+        if (metadataSaveFailure is not null)
+        {
+            return metadataSaveFailure;
+        }
+
+        return Results.Created(
+            $"/tickets/{ticketId}/attachments/{attachment.Id}/content",
+            AttachmentPolicy.ToResponse(attachment));
+    }
+
+    private static async Task<IResult> DownloadAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        TicketDbContext db,
+        IAttachmentBlobStore blobStore,
+        CancellationToken cancellationToken)
+    {
+        var attachment = await db.Attachments
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                x => x.TicketId == ticketId && x.Id == attachmentId,
+                cancellationToken);
+        if (attachment is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            var content = await blobStore.OpenReadAsync(
+                attachment.BlobName,
+                attachment.ContentType,
+                attachment.OriginalFileName,
+                cancellationToken);
+            return content is null
+                ? Results.Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    type: "https://supporthub.dev/problems/attachment-content-missing",
+                    title: "Attachment content is missing",
+                    detail: "The attachment metadata exists but its content could not be found.")
+                : Results.Stream(
+                    content.Content,
+                    content.ContentType,
+                    content.FileName,
+                    enableRangeProcessing: true);
+        }
+        catch (RequestFailedException exception)
+        {
+            return AttachmentFailureHandling.StorageProblem("download", exception);
+        }
+    }
+
+    private static async Task<IResult> HeadAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        TicketDbContext db,
+        IAttachmentBlobStore blobStore,
+        CancellationToken cancellationToken)
+    {
+        var attachment = await db.Attachments
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                x => x.TicketId == ticketId && x.Id == attachmentId,
+                cancellationToken);
+        if (attachment is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            if (!await blobStore.ExistsAsync(attachment.BlobName, cancellationToken))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    type: "https://supporthub.dev/problems/attachment-content-missing",
+                    title: "Attachment content is missing",
+                    detail: "The attachment metadata exists but its content could not be found.");
+            }
+
+            return Results.Ok();
+        }
+        catch (RequestFailedException exception)
+        {
+            return AttachmentFailureHandling.StorageProblem("download", exception);
+        }
+    }
+
+    private static async Task<IResult> DeleteAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        TicketDbContext db,
+        IAttachmentBlobStore blobStore,
+        CancellationToken cancellationToken)
+    {
+        var attachment = await db.Attachments
+            .SingleOrDefaultAsync(
+                x => x.TicketId == ticketId && x.Id == attachmentId,
+                cancellationToken);
+        if (attachment is null)
+        {
+            return Results.NotFound();
+        }
+
+        db.Attachments.Remove(attachment);
+        var deleteFailure = await AttachmentFailureHandling.DeleteContentThenMetadataAsync(
+            () => blobStore.DeleteIfExistsAsync(attachment.BlobName, cancellationToken),
+            () => db.SaveChangesAsync(cancellationToken));
+        if (deleteFailure is not null)
+        {
+            return deleteFailure;
+        }
+
+        return Results.NoContent();
+    }
+
+    internal static async Task<IResult?> CleanupForTicketAsync(
+        Guid ticketId,
+        TicketDbContext db,
+        IAttachmentBlobStore blobStore,
+        CancellationToken cancellationToken)
+    {
+        var attachments = await db.Attachments
+            .Where(x => x.TicketId == ticketId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var attachment in attachments)
+        {
+            try
+            {
+                await blobStore.DeleteIfExistsAsync(attachment.BlobName, cancellationToken);
+            }
+            catch (RequestFailedException exception)
+            {
+                return AttachmentFailureHandling.StorageProblem("ticket-delete", exception);
+            }
+        }
+
+        db.Attachments.RemoveRange(attachments);
+        return null;
+    }
+
+    private static async Task<bool> TicketExistsAsync(
+        Guid ticketId,
+        TicketDbContext db,
+        CancellationToken cancellationToken) =>
+        await db.Tickets.AsNoTracking().AnyAsync(x => x.Id == ticketId, cancellationToken);
+
+    private sealed class CountingReadStream(Stream inner, long maximumBytes) : Stream
+    {
+        public long BytesRead { get; private set; }
+
+        public override bool CanRead => inner.CanRead;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => inner.Length;
+        public override long Position { get => inner.Position; set => throw new NotSupportedException(); }
+        public override void Flush() => throw new NotSupportedException();
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+        public override int Read(Span<byte> buffer) => inner.Read(buffer);
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+        public override async ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            var read = await inner.ReadAsync(buffer, cancellationToken);
+            BytesRead += read;
+            if (BytesRead > maximumBytes)
+            {
+                throw new AttachmentTooLargeException(
+                    $"The file must be {maximumBytes / 1024 / 1024} MiB or smaller.");
+            }
+
+            return read;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                inner.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    private sealed class AttachmentTooLargeException(string message) : Exception(message);
+}
