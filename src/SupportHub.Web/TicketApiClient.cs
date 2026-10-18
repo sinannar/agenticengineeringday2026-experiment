@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace SupportHub.Web;
 
@@ -67,6 +69,60 @@ public class TicketApiClient(HttpClient httpClient)
         await EnsureSuccessAsync(response);
     }
 
+    public Task<IReadOnlyList<AttachmentModel>> GetAttachmentsAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken = default) =>
+        GetRequiredAsync<IReadOnlyList<AttachmentModel>>(
+            $"tickets/{ticketId}/attachments",
+            cancellationToken);
+
+    public async Task<AttachmentModel> UploadAttachmentAsync(
+        Guid ticketId,
+        IBrowserFile file,
+        IProgress<long>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var stream = file.OpenReadStream(AttachmentPolicyModel.MaximumFileSize, cancellationToken);
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ProgressStreamContent(stream, file.Size, progress);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        content.Add(
+            fileContent,
+            "file",
+            file.Name);
+
+        using var response = await httpClient.PostAsync(
+            $"tickets/{ticketId}/attachments",
+            content,
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadFromJsonAsync<AttachmentModel>(JsonOptions, cancellationToken)
+            ?? throw new TicketApiException("The ticket API returned an empty attachment response.");
+    }
+
+    public async Task DeleteAttachmentAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await httpClient.DeleteAsync(
+            $"tickets/{ticketId}/attachments/{attachmentId}",
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    public Task<HttpResponseMessage> GetAttachmentDownloadResponseAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        CancellationToken cancellationToken = default) =>
+        httpClient.GetAsync(
+            $"tickets/{ticketId}/attachments/{attachmentId}/content",
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+    public static string GetAttachmentDownloadPath(Guid ticketId, Guid attachmentId) =>
+        $"/tickets/{ticketId}/attachments/{attachmentId}/download";
+
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken cancellationToken)
     {
         using var response = await httpClient.GetAsync(path, cancellationToken);
@@ -101,6 +157,7 @@ public class TicketApiClient(HttpClient httpClient)
         var message = response.StatusCode switch
         {
             HttpStatusCode.BadRequest => "Please correct the highlighted ticket details.",
+            HttpStatusCode.RequestEntityTooLarge => "The attachment is too large.",
             HttpStatusCode.NotFound => "The ticket could not be found.",
             HttpStatusCode.ServiceUnavailable => "The customer service is unavailable. Please try again.",
             _ => "The ticket service is unavailable. Please try again."
@@ -109,6 +166,50 @@ public class TicketApiClient(HttpClient httpClient)
         throw new TicketApiException(message, response.StatusCode);
     }
 }
+
+public static class AttachmentPolicyModel
+{
+    public const long MaximumFileSize = 10 * 1024 * 1024;
+}
+
+public sealed record AttachmentModel(
+    Guid Id,
+    Guid TicketId,
+    string OriginalFileName,
+    string ContentType,
+    long Size,
+    DateTimeOffset CreatedAt);
+
+internal sealed class ProgressStreamContent(
+    Stream source,
+    long sourceLength,
+    IProgress<long>? progress) : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            SerializeToStreamAsync(stream, context, CancellationToken.None);
+
+        protected override async Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context,
+            CancellationToken cancellationToken)
+        {
+            var buffer = new byte[64 * 1024];
+            long total = 0;
+            int read;
+            while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
+            {
+                await stream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                total += read;
+                progress?.Report(total);
+            }
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = sourceLength;
+            return true;
+        }
+    }
 
 public sealed record TicketModel(
     Guid Id,

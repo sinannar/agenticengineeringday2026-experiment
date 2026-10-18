@@ -80,7 +80,7 @@ flowchart LR
 The plan preserves the existing `storage`/`blobs` AppHost resource and adds only service-owned metadata, attachment endpoints, typed Web access, UI behavior, and verification. No Activity Worker, SLA behavior, authentication, malware scanner, or reconciliation worker is introduced.
 
 <!-- rpi:phase id=P01 -->
-### [ ] P01: Establish the attachment contract, policy, and metadata foundation
+### [x] P01: Establish the attachment contract, policy, and metadata foundation
 
 Goals:
 * Establish one server-authoritative attachment policy and explicit metadata contracts so every later API, client, UI, and test surface shares the same limits, names, and route semantics.
@@ -117,7 +117,7 @@ flowchart LR
 Highlighted work: `contracts`, `metadata`, and their focused unit-test seams.
 
 <!-- rpi:task id=P01-T01 -->
-#### [ ] P01-T01: Define the attachment policy and public contracts
+#### [x] P01-T01: Define the attachment policy and public contracts
 
 Goals:
 * Create a single, server-authoritative policy and explicit request/response shapes that make size, type, filename, route ownership, and content metadata testable.
@@ -155,7 +155,7 @@ Dependencies:
 * None.
 
 <!-- rpi:task id=P01-T02 -->
-#### [ ] P01-T02: Add the attachment entity, EF mapping, and migration
+#### [x] P01-T02: Add the attachment entity, EF mapping, and migration
 
 Goals:
 * Persist attachment metadata in the service-owned `ticketsdb` schema with deterministic indexes and migration-backed local/test startup behavior.
@@ -198,7 +198,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:phase id=P02 -->
-### [ ] P02: Implement ticket-scoped storage and API behavior
+### [x] P02: Implement ticket-scoped storage and API behavior
 
 Goals:
 * Provide complete upload, list, streamed download, and delete behavior with authoritative validation, explicit storage failures, and safe compensation across Blob Storage and PostgreSQL.
@@ -238,7 +238,7 @@ flowchart LR
 Highlighted work: Tickets API endpoints, storage operations, and failure semantics over the existing `ticketsdb`/`blobs` resources.
 
 <!-- rpi:task id=P02-T01 -->
-#### [ ] P02-T01: Establish the blob container/client seam and upload stream boundary
+#### [x] P02-T01: Establish the blob container/client seam and upload stream boundary
 
 Goals:
 * Make the Tickets API resolve the existing `blobs` resource and stream validated multipart content without whole-file buffering.
@@ -271,7 +271,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:task id=P02-T02 -->
-#### [ ] P02-T02: Implement upload, list, download, and delete endpoints
+#### [x] P02-T02: Implement upload, list, download, and delete endpoints
 
 Goals:
 * Expose the complete ticket-scoped attachment API with explicit status/error behavior and no cross-ticket access path.
@@ -317,7 +317,7 @@ Dependencies:
 * P02-T01.
 
 <!-- rpi:task id=P02-T03 -->
-#### [ ] P02-T03: Add explicit failure mapping and operational diagnostics
+#### [x] P02-T03: Add explicit failure mapping and operational diagnostics
 
 Goals:
 * Ensure failed uploads, failed compensation, missing content, and delete inconsistencies are visible and retryable rather than silently converted into success.
@@ -349,7 +349,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P02-T04 -->
-#### [ ] P02-T04: Integrate attachment cleanup with ticket deletion
+#### [x] P02-T04: Integrate attachment cleanup with ticket deletion
 
 Goals:
 * Ensure deleting an existing ticket cannot silently strand attachment metadata or blobs that the ticket route can no longer reach.
@@ -386,7 +386,7 @@ Dependencies:
 * P02-T03.
 
 <!-- rpi:phase id=P03 -->
-### [ ] P03: Add typed Blazor attachment workflows and same-origin download behavior
+### [x] P03: Add typed Blazor attachment workflows and same-origin download behavior
 
 Goals:
 * Give support staff a usable ticket-detail attachment experience with explicit loading, progress, success, empty, and retryable error states while keeping all storage access behind Tickets API.
@@ -428,7 +428,7 @@ flowchart LR
 Highlighted work: typed client methods, the ticket-detail attachment section, and a same-origin download path.
 
 <!-- rpi:task id=P03-T01 -->
-#### [ ] P03-T01: Extend `TicketApiClient` with attachment contracts and streaming operations
+#### [x] P03-T01: Extend `TicketApiClient` with attachment contracts and streaming operations
 
 Goals:
 * Provide strongly typed C# client methods for attachment list/upload/delete and server-side streamed download without exposing service-discovery details to components.
@@ -466,7 +466,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:task id=P03-T02 -->
-#### [ ] P03-T02: Add ticket-detail attachment controls and feedback states
+#### [x] P03-T02: Add ticket-detail attachment controls and feedback states
 
 Goals:
 * Let support staff select, upload, list, download, and delete attachments from the existing ticket detail page with clear state transitions.
@@ -496,7 +496,7 @@ Dependencies:
 * P03-T01.
 
 <!-- rpi:task id=P03-T03 -->
-#### [ ] P03-T03: Provide a same-origin browser download path
+#### [x] P03-T03: Provide a same-origin browser download path
 
 Goals:
 * Allow browser downloads without exposing internal Aspire service-discovery URIs or bypassing Tickets API route checks.
@@ -608,7 +608,7 @@ Dependencies:
 * P02-T03.
 
 <!-- rpi:task id=P04-T02 -->
-#### [ ] P04-T02: Add Aspire/Azurite attachment lifecycle integration tests
+#### [x] P04-T02: Add Aspire/Azurite attachment lifecycle integration tests
 
 Goals:
 * Prove real distributed upload, metadata persistence, download, isolation, deletion, and failure behavior against the AppHost’s local Blob Storage and PostgreSQL resources.
@@ -647,7 +647,7 @@ Dependencies:
 * P02-T04.
 
 <!-- rpi:task id=P04-T03 -->
-#### [ ] P04-T03: Verify Aspire runtime health, logs, and end-to-end behavior
+#### [x] P04-T03: Verify Aspire runtime health, logs, and end-to-end behavior
 
 Goals:
 * Confirm the final distributed graph starts with the existing `blobs` resource, Tickets API health checks pass, and attachment operations produce no unexpected runtime failures.
@@ -676,7 +676,7 @@ Dependencies:
 * P04-T02.
 
 <!-- rpi:task id=P04-T04 -->
-#### [ ] P04-T04: Verify the Web attachment experience through the running app
+#### [x] P04-T04: Verify the Web attachment experience through the running app
 
 Goals:
 * Prove the meaningful Blazor behavior required by the feature, not only the Tickets API, including same-origin download routing and user-visible state transitions.
@@ -727,7 +727,7 @@ Dependencies:
 * Handle failed uploads, orphaned blobs, and missing content deliberately.
 * Add Blazor controls with progress/error feedback.
 * Add integration tests against local Blob Storage.
-* Plan only; do not modify application code or create a pull request.
+* Original planning-only direction is superseded for this invocation by the explicit `/hve-core:rpi-implement` request; application changes are now authorized within the approved feature scope. No pull request will be created.
 
 ### Planning Decisions and Feedback
 

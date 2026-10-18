@@ -109,6 +109,135 @@ public class TicketsApiTests
         Assert.Equal(HttpStatusCode.NotFound, missingResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task TicketsApi_ManagesAttachmentLifecycleAndIsolation()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("blobs");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "Attachment Customer", "attachment@example.com");
+        var ticket = await CreateTicketAsync(ticketsClient, customer.Id, "Attachment ticket");
+        var otherTicket = await CreateTicketAsync(ticketsClient, customer.Id, "Other ticket");
+
+        using var emptyResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/attachments");
+        emptyResponse.EnsureSuccessStatusCode();
+        Assert.Empty(await emptyResponse.Content.ReadFromJsonAsync<List<AttachmentResponse>>(JsonOptions));
+
+        using var uploadResponse = await UploadAsync(
+            ticketsClient,
+            ticket.Id,
+            "evidence.txt",
+            "text/plain",
+            "attachment body"u8.ToArray());
+        Assert.True(
+            uploadResponse.StatusCode == HttpStatusCode.Created,
+            await uploadResponse.Content.ReadAsStringAsync());
+        var attachment = await uploadResponse.Content.ReadFromJsonAsync<AttachmentResponse>(JsonOptions);
+        Assert.NotNull(attachment);
+        Assert.Equal(ticket.Id, attachment.TicketId);
+        Assert.Equal("evidence.txt", attachment.OriginalFileName);
+
+        using var listResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/attachments");
+        listResponse.EnsureSuccessStatusCode();
+        var listed = Assert.Single(await listResponse.Content.ReadFromJsonAsync<List<AttachmentResponse>>(JsonOptions));
+        Assert.Equal(attachment.Id, listed.Id);
+
+        using var crossTicketResponse = await ticketsClient.GetAsync(
+            $"/tickets/{otherTicket.Id}/attachments/{attachment.Id}/content");
+        Assert.Equal(HttpStatusCode.NotFound, crossTicketResponse.StatusCode);
+
+        using var downloadResponse = await ticketsClient.GetAsync(
+            $"/tickets/{ticket.Id}/attachments/{attachment.Id}/content");
+        downloadResponse.EnsureSuccessStatusCode();
+        Assert.Equal("attachment body", await downloadResponse.Content.ReadAsStringAsync());
+        Assert.Equal("text/plain", downloadResponse.Content.Headers.ContentType?.MediaType);
+
+        using var deleteResponse = await ticketsClient.DeleteAsync(
+            $"/tickets/{ticket.Id}/attachments/{attachment.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        using var deletedContentResponse = await ticketsClient.GetAsync(
+            $"/tickets/{ticket.Id}/attachments/{attachment.Id}/content");
+        Assert.Equal(HttpStatusCode.NotFound, deletedContentResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task TicketsApi_RejectsInvalidAndOversizedAttachments()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "Validation Customer", "validation@example.com");
+        var ticket = await CreateTicketAsync(ticketsClient, customer.Id, "Validation ticket");
+
+        using var invalidResponse = await UploadAsync(
+            ticketsClient,
+            ticket.Id,
+            "malware.exe",
+            "application/octet-stream",
+            "invalid"u8.ToArray());
+        Assert.Equal(HttpStatusCode.BadRequest, invalidResponse.StatusCode);
+
+        using var oversizedResponse = await UploadAsync(
+            ticketsClient,
+            ticket.Id,
+            "large.txt",
+            "text/plain",
+            new byte[10 * 1024 * 1024 + 1]);
+        Assert.True(
+            oversizedResponse.StatusCode == HttpStatusCode.RequestEntityTooLarge,
+            await oversizedResponse.Content.ReadAsStringAsync());
+
+        using var listResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/attachments");
+        listResponse.EnsureSuccessStatusCode();
+        Assert.Empty(await listResponse.Content.ReadFromJsonAsync<List<AttachmentResponse>>(JsonOptions));
+    }
+
+    [Fact]
+    public async Task TicketsApi_CleansAttachmentsBeforeDeletingTicket()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "Delete Customer", "delete@example.com");
+        var ticket = await CreateTicketAsync(ticketsClient, customer.Id, "Delete ticket");
+        using var uploadResponse = await UploadAsync(
+            ticketsClient,
+            ticket.Id,
+            "cleanup.txt",
+            "text/plain",
+            "cleanup"u8.ToArray());
+        uploadResponse.EnsureSuccessStatusCode();
+
+        using var deleteResponse = await ticketsClient.DeleteAsync($"/tickets/{ticket.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        using var attachmentsResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/attachments");
+        Assert.Equal(HttpStatusCode.NotFound, attachmentsResponse.StatusCode);
+    }
+
     private static void ConfigureTestEnvironment()
     {
         Environment.SetEnvironmentVariable("SUPPORTHUB_TEST_MODE", "true");
@@ -130,6 +259,38 @@ public class TicketsApiTests
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<CustomerResponse>(JsonOptions))!;
     }
+
+    private static async Task<TicketResponse> CreateTicketAsync(
+        HttpClient client,
+        Guid customerId,
+        string title)
+    {
+        using var response = await client.PostAsJsonAsync("/tickets", new
+        {
+            title,
+            description = "A ticket for attachment testing.",
+            status = "Open",
+            priority = "Medium",
+            assignee = (string?)null,
+            customerId
+        }, JsonOptions);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<TicketResponse>(JsonOptions))!;
+    }
+
+    private static async Task<HttpResponseMessage> UploadAsync(
+        HttpClient client,
+        Guid ticketId,
+        string fileName,
+        string contentType,
+        byte[] content)
+    {
+        using var multipart = new MultipartFormDataContent();
+        var file = new ByteArrayContent(content);
+        file.Headers.ContentType = new(contentType);
+        multipart.Add(file, "file", fileName);
+        return await client.PostAsync($"/tickets/{ticketId}/attachments", multipart);
+    }
 }
 
 public sealed record TicketResponse(
@@ -142,6 +303,14 @@ public sealed record TicketResponse(
     Guid CustomerId,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
+
+public sealed record AttachmentResponse(
+    Guid Id,
+    Guid TicketId,
+    string OriginalFileName,
+    string ContentType,
+    long Size,
+    DateTimeOffset CreatedAt);
 
 public enum TicketStatus
 {
