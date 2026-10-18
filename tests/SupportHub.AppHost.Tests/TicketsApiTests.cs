@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 
 public class TicketsApiTests
 {
+    private const string InternalMaintenanceKey = "activity-test-key";
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -107,6 +109,80 @@ public class TicketsApiTests
 
         using var missingResponse = await ticketsClient.GetAsync($"/tickets/{created.Id}");
         Assert.Equal(HttpStatusCode.NotFound, missingResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task TicketChanges_AreAvailableThroughActivityHistory()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("activity-worker");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "Activity Customer", "activity@example.com");
+        var ticket = await CreateTicketAsync(ticketsClient, customer.Id, "Activity ticket");
+
+        using var updateResponse = await ticketsClient.PutAsJsonAsync($"/tickets/{ticket.Id}", new
+        {
+            title = "Activity ticket updated",
+            description = "Updated for activity testing.",
+            status = "Resolved",
+            priority = "High",
+            assignee = "Ada",
+            customerId = customer.Id
+        }, JsonOptions);
+        updateResponse.EnsureSuccessStatusCode();
+
+        ActivityHistoryResponse? history = null;
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            using var response = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/activity");
+            if (response.IsSuccessStatusCode)
+            {
+                history = await response.Content.ReadFromJsonAsync<ActivityHistoryResponse>(JsonOptions);
+                if (history?.Items.Count >= 4)
+                {
+                    break;
+                }
+            }
+
+            await Task.Delay(500);
+        }
+
+        Assert.NotNull(history);
+        Assert.Contains(history!.Items, item => item.EventType == "ticket.created");
+        Assert.Contains(history.Items, item => item.EventType == "ticket.updated");
+        Assert.Contains(history.Items, item => item.EventType == "ticket.status-changed");
+        Assert.Contains(history.Items, item => item.EventType == "ticket.assignment-changed");
+
+        foreach (var item in history.Items)
+        {
+            using var unauthorizedReplayResponse = await ticketsClient.PostAsync(
+                $"/internal/outbox/{item.Id}/replay",
+                content: null);
+            Assert.Equal(HttpStatusCode.NotFound, unauthorizedReplayResponse.StatusCode);
+
+            using var replayRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"/internal/outbox/{item.Id}/replay");
+            replayRequest.Headers.Add("X-SupportHub-Internal-Key", InternalMaintenanceKey);
+            using var replayResponse = await ticketsClient.SendAsync(replayRequest);
+            Assert.Equal(HttpStatusCode.Accepted, replayResponse.StatusCode);
+        }
+
+        await Task.Delay(3_000);
+        using var duplicateHistoryResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/activity");
+        duplicateHistoryResponse.EnsureSuccessStatusCode();
+        var duplicateHistory =
+            await duplicateHistoryResponse.Content.ReadFromJsonAsync<ActivityHistoryResponse>(JsonOptions);
+        Assert.Equal(4, duplicateHistory!.Items.Count);
     }
 
     [Fact]
@@ -242,6 +318,7 @@ public class TicketsApiTests
     {
         Environment.SetEnvironmentVariable("SUPPORTHUB_TEST_MODE", "true");
         Environment.SetEnvironmentVariable("SUPPORTHUB_APPLY_MIGRATIONS", "true");
+        Environment.SetEnvironmentVariable("SUPPORTHUB_INTERNAL_MAINTENANCE_KEY", InternalMaintenanceKey);
     }
 
     private static async Task<CustomerResponse> CreateCustomerAsync(
@@ -311,6 +388,18 @@ public sealed record AttachmentResponse(
     string ContentType,
     long Size,
     DateTimeOffset CreatedAt);
+
+public sealed record ActivityHistoryResponse(
+    Guid TicketId,
+    IReadOnlyList<ActivityHistoryItem> Items);
+
+public sealed record ActivityHistoryItem(
+    Guid Id,
+    string EventType,
+    Guid TicketId,
+    DateTimeOffset OccurredAtUtc,
+    string? Actor,
+    JsonElement Details);
 
 public enum TicketStatus
 {

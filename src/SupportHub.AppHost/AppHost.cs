@@ -56,6 +56,15 @@ var activityDb = cosmos.AddCosmosDatabase("activitydb");
 // APIs
 // ============================================================
 
+// Activity Worker - consumes ticket events and stores audit data
+var activityWorker = builder.AddProject<Projects.SupportHub_Activity_Worker>("activity-worker")
+    .WithReference(serviceBus)
+    .WithReference(activityDb)
+    .WaitFor(serviceBus)
+    .WaitFor(activityDb)
+    .WithHttpEndpoint()
+    .WithHttpHealthCheck("/health");
+
 // Customers API
 var customersapi = builder
     .AddProject<Projects.SupportHub_Customers_Api>("customersapi")
@@ -75,6 +84,7 @@ var ticketsapi = builder
     .WithReference(customersapi)
     .WithReference(blobs)
     .WithReference(serviceBus)
+    .WithReference(activityWorker)
     .WaitFor(ticketsDb)
     .WaitFor(customersapi)
     .WaitFor(blobs)
@@ -86,16 +96,13 @@ if (builder.Environment.IsDevelopment())
     ticketsapi.WithEnvironment("SUPPORTHUB_APPLY_MIGRATIONS", "true");
 }
 
+ticketsapi.WithEnvironment(
+    "SUPPORTHUB_INTERNAL_MAINTENANCE_KEY",
+    builder.Configuration["SUPPORTHUB_INTERNAL_MAINTENANCE_KEY"] ?? string.Empty);
+
 // ============================================================
 // Background Workers
 // ============================================================
-
-// Activity Worker - consumes ticket events and stores audit data
-builder.AddProject<Projects.SupportHub_Activity_Worker>("activity-worker")
-    .WithReference(serviceBus)
-    .WithReference(activityDb)
-    .WaitFor(serviceBus)
-    .WaitFor(activityDb);
 
 // SLA Worker - monitors ticket SLA deadlines
 builder.AddProject<Projects.SupportHub_Sla_Worker>("sla-worker")

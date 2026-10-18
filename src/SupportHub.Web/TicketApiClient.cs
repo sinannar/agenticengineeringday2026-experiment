@@ -76,6 +76,13 @@ public class TicketApiClient(HttpClient httpClient)
             $"tickets/{ticketId}/attachments",
             cancellationToken);
 
+    public Task<ActivityHistoryResponseModel> GetActivityAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken = default) =>
+        GetRequiredAsync<ActivityHistoryResponseModel>(
+            $"tickets/{ticketId}/activity",
+            cancellationToken);
+
     public async Task<AttachmentModel> UploadAttachmentAsync(
         Guid ticketId,
         IBrowserFile file,
@@ -206,6 +213,18 @@ public sealed record AttachmentModel(
     string ContentType,
     long Size,
     DateTimeOffset CreatedAt);
+
+public sealed record ActivityHistoryResponseModel(
+    Guid TicketId,
+    IReadOnlyList<ActivityHistoryModel> Items);
+
+public sealed record ActivityHistoryModel(
+    Guid Id,
+    string EventType,
+    Guid TicketId,
+    DateTimeOffset OccurredAtUtc,
+    string? Actor,
+    JsonElement Details);
 
 internal sealed class ProgressStreamContent(
     Stream source,

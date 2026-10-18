@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SupportHub.Tickets.Api.Features.Activity;
 using SupportHub.Tickets.Api.Features.Attachments;
 
 namespace SupportHub.Tickets.Api.Features.Tickets;
@@ -7,6 +8,7 @@ public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) :
 {
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<OutboxEvent> OutboxEvents => Set<OutboxEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,5 +38,13 @@ public sealed class TicketDbContext(DbContextOptions<TicketDbContext> options) :
         attachment.Property(x => x.CreatedAt).IsRequired();
         attachment.HasIndex(x => x.BlobName).IsUnique();
         attachment.HasIndex(x => x.TicketId);
+
+        var outbox = modelBuilder.Entity<OutboxEvent>();
+        outbox.HasKey(x => x.EventId);
+        outbox.Property(x => x.EventType).HasMaxLength(128).IsRequired();
+        outbox.Property(x => x.Payload).IsRequired();
+        outbox.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+        outbox.Property(x => x.LastErrorCategory).HasMaxLength(256);
+        outbox.HasIndex(x => new { x.Status, x.NextAttemptAtUtc, x.OccurredAtUtc });
     }
 }

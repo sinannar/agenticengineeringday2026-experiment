@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SupportHub.ServiceDefaults\SupportHub.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\SupportHub.Activity.Contracts\SupportHub.Activity.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

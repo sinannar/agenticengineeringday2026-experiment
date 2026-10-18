@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SupportHub.Tickets.Api.Features.Activity;
 using SupportHub.Tickets.Api.Features.Attachments;
 
 namespace SupportHub.Tickets.Api.Features.Tickets;
@@ -11,6 +12,7 @@ public static class TicketEndpoints
 
         group.MapGet("", ListAsync);
         group.MapGet("/{id:guid}", GetAsync);
+        group.MapGet("/{id:guid}/activity", GetActivityAsync);
         group.MapPost("", CreateAsync);
         group.MapPut("/{id:guid}", UpdateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
@@ -86,6 +88,45 @@ public static class TicketEndpoints
         return ticket is null ? Results.NotFound() : Results.Ok(TicketValidation.ToResponse(ticket));
     }
 
+    private static async Task<IResult> GetActivityAsync(
+        Guid id,
+        TicketDbContext db,
+        ActivityWorkerClient activityWorker,
+        CancellationToken cancellationToken)
+    {
+        if (id == Guid.Empty)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["id"] = ["Ticket ID must not be empty."]
+            });
+        }
+
+        if (!await db.Tickets.AsNoTracking().AnyAsync(x => x.Id == id, cancellationToken))
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            return Results.Ok(await activityWorker.GetHistoryAsync(id, cancellationToken));
+        }
+        catch (ActivityWorkerUnavailableException)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Activity service unavailable",
+                detail: "Ticket activity is temporarily unavailable.");
+        }
+        catch (ActivityWorkerContractException)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Invalid activity response",
+                detail: "The activity service returned an invalid response.");
+        }
+    }
+
     private static async Task<IResult> CreateAsync(
         TicketRequest request,
         TicketDbContext db,
@@ -114,6 +155,7 @@ public static class TicketEndpoints
         TicketValidation.Apply(ticket, request);
 
         db.Tickets.Add(ticket);
+        db.OutboxEvents.Add(ActivityEventFactory.Created(ticket, now));
         await db.SaveChangesAsync(cancellationToken);
 
         return Results.Created($"/tickets/{ticket.Id}", TicketValidation.ToResponse(ticket));
@@ -147,8 +189,32 @@ public static class TicketEndpoints
             }
         }
 
+        var before = new Ticket
+        {
+            Id = ticket.Id,
+            Title = ticket.Title,
+            Description = ticket.Description,
+            Status = ticket.Status,
+            Priority = ticket.Priority,
+            Assignee = ticket.Assignee,
+            CustomerId = ticket.CustomerId,
+            CreatedAt = ticket.CreatedAt,
+            UpdatedAt = ticket.UpdatedAt
+        };
         TicketValidation.Apply(ticket, request);
-        ticket.UpdatedAt = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
+        ticket.UpdatedAt = now;
+        db.OutboxEvents.Add(ActivityEventFactory.Updated(before, ticket, now));
+        if (before.Status != ticket.Status)
+        {
+            db.OutboxEvents.Add(ActivityEventFactory.StatusChanged(before, ticket, now));
+        }
+
+        if (!string.Equals(before.Assignee, ticket.Assignee, StringComparison.Ordinal))
+        {
+            db.OutboxEvents.Add(ActivityEventFactory.AssignmentChanged(before, ticket, now));
+        }
+
         await db.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(TicketValidation.ToResponse(ticket));
