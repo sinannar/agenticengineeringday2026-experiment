@@ -532,7 +532,7 @@ Dependencies:
 * P03-T01.
 
 <!-- rpi:phase id=P04 -->
-### [ ] P04: Prove behavior with focused tests and Aspire runtime verification
+### [x] P04: Prove behavior with focused tests and Aspire runtime verification
 
 Goals:
 * Demonstrate that attachment metadata, content, API contracts, UI-facing client behavior, failure compensation, and local Azurite wiring work together in the real distributed application.
@@ -577,7 +577,7 @@ flowchart LR
 Highlighted work: focused policy tests, end-to-end Azurite tests, and runtime health/log evidence.
 
 <!-- rpi:task id=P04-T01 -->
-#### [ ] P04-T01: Add focused attachment policy and contract tests
+#### [x] P04-T01: Add focused attachment policy and contract tests
 
 Goals:
 * Lock down deterministic validation, filename normalization, blob-key generation, and error mapping independently from container startup.
@@ -742,16 +742,16 @@ Dependencies:
 
 | Field | Record |
 |-------|--------|
-| Planning execution and readiness | Complete; Ready for implementation after user approval |
-| Decision participation | user-owned; standalone planning invocation; D1, D2, and D4 are confirmed user decisions |
-| Blockers | None within the supplied planning boundary; user approval is required before implementation |
+| Planning execution and readiness | Complete; implementation complete and ready for review |
+| Decision participation | user-owned; D1, D2, and D4 are confirmed user decisions |
+| Blockers | None |
 | Latest critique | [.copilot-tracking/reviews/plans/2026-10-18/ticket-attachments-plan-critique-6.md](../../reviews/plans/2026-10-18/ticket-attachments-plan-critique-6.md) with Pass verdict |
 | Relevant research | [.copilot-tracking/research/2026-10-18/ticket-attachments-research.md](../../research/2026-10-18/ticket-attachments-research.md) |
 | Plan | `.copilot-tracking/plans/2026-10-18/ticket-attachments-plan.md` |
-| Changes-record role | `.copilot-tracking/changes/2026-10-18/ticket-attachments-changes.md` will be implementation evidence |
+| Changes-record role | `.copilot-tracking/changes/2026-10-18/ticket-attachments-changes.md` is the implementation evidence |
 | Continuation owner | user/manual RPI |
-| Required gates or confirmations | User approval; implementation must preserve the confirmed D1/D2/D4 policies, exact resource/container names, C#-only scope, and the listed tests |
-| Next action | Present the plan for approval; after approval run `/rpi-implement` |
+| Required gates or confirmations | Review should preserve the confirmed D1/D2/D4 policies, exact resource/container names, C#-only scope, and the listed tests |
+| Next action | Run `/rpi-review`; optional direct Azurite enumeration remains follow-up validation |
 
 ## Goals
 
@@ -872,14 +872,14 @@ Dependencies:
 * [x] Existing files use workspace-relative Markdown links; not-yet-created paths use backticks.
 * [x] Before/After and phase diagrams reuse stable nodes, prescribed Mermaid initialization, explicit colors, and dashed new nodes.
 * [x] Critique setting, status, findings, prior critique lineage, dispositions, and residual risks are recorded.
-* [x] Planning execution, readiness, continuation, gates, next action, and implementation changes-record path are recorded; readiness is implementation-ready pending user approval.
+* [x] Planning execution, readiness, continuation, gates, next action, and implementation changes-record path are recorded; implementation is complete and review-ready.
 * [x] Follow-Up Items remain outside active plan completion claims.
 * Checked sections: all required plan sections.
 * Missing or limited sections: implementation-time compile/API/runtime verification remains downstream.
 
 ## Follow-Up Items
 
-* None
+* Direct Azurite container/blob enumeration assertions remain optional follow-up validation if the pinned Aspire test resource API is verified and the scope remains required.
 
 ## Handoff
 

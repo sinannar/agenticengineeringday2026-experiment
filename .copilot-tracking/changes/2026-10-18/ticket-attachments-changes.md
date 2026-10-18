@@ -9,11 +9,11 @@
 
 ## Execution Status
 
-* Status: Partially complete
+* Status: Complete
 * Declared invocation scope: full plan
-* Completed scope markers: `P01`, `P02`, `P03`, `P04-T02`, `P04-T03`, `P04-T04`
-* Remaining active-plan markers: `P04`, `P04-T01`
-* Status basis: Application behavior, distributed tests, runtime health, and browser smoke verification are complete; deterministic coordinator/failure-seam tests remain.
+* Completed scope markers: `P01`, `P02`, `P03`, `P04`, and all tasks
+* Remaining active-plan markers: none
+* Status basis: Application behavior, deterministic failure-seam tests, distributed tests, runtime health, and browser smoke verification are complete.
 
 ## Execution Summary
 
@@ -45,6 +45,12 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 * Started the exact AppHost, waited for `blobs`, `ticketsapi`, and `webfrontend` health, inspected Tickets API/Web logs, and verified migration and Azurite container activity.
 * Browser verification covered initial empty state, valid upload, list refresh, same-origin download, and delete success. Browser console reported no errors during the attachment flow.
 
+### Locking down failure compensation and error contracts (`P04-T01`)
+
+* Added an internal failure-handling seam used by the attachment endpoints for upload compensation, metadata-save failure, metadata-delete failure, and blob storage Problem Details.
+* Added deterministic fake-store tests covering successful and failed compensation deletion plus exact operation-specific error types for upload, individual delete, and ticket-delete cleanup paths.
+* Validation: `dotnet test tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj --no-restore` passed with 26 tests.
+
 ## Implementation-Time Plan Updates
 
 ### Explicit implementation authorization
@@ -57,6 +63,13 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 * Reconciliation performed: Updated the plan’s direction while preserving the approved scope, decisions, risks, and critique state.
 * Planning and critique state: Approved plan; critique-6 passed.
 
+### Reconciled review-ready implementation state
+
+* Affected plan area: `Planning Readiness and Next Step`.
+* What changed: Updated the plan from implementation-ready/pending approval to implementation complete and review-ready after all active markers gained implementation and validation evidence.
+* Why: The explicit implementation invocation authorized the work, and the final build, tests, runtime checks, and browser verification now provide the required evidence.
+* Reconciliation performed: Updated the plan handoff, changes-record status, remaining work, and review readiness consistently.
+
 ## Business Alignment
 
 * None
@@ -66,21 +79,21 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 | Check | Scope | Status | Evidence or reason |
 |---|---|---|---|
 | `dotnet build SupportHub.slnx --no-restore` | Full solution | Passed | Build succeeded; only the existing `MessagePack` vulnerability warnings remain. |
-| `dotnet test SupportHub.slnx --no-restore` | Full solution | Passed | 32 tests passed. |
-| `dotnet test tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj --no-restore` | Policy tests | Passed | 18 attachment policy tests passed. |
-| Aspire AppHost attachment integration tests | Distributed API/storage | Passed | Lifecycle, isolation, validation, oversized upload, and ticket-delete cleanup passed. |
+| `dotnet test SupportHub.slnx --no-restore` | Full solution | Passed | 40 tests passed; two existing `MessagePack` vulnerability warnings remain. |
+| `dotnet test tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj --no-restore` | Policy and failure-seam tests | Passed | 26 focused attachment tests passed. |
+| Aspire AppHost attachment integration tests | Distributed API/storage | Passed | Five filtered ticket/attachment tests passed after the failure-handling refactor. |
 | Aspire CLI `wait blobs`, `wait ticketsapi`, `wait webfrontend` | Runtime health | Passed | All affected resources reached healthy state. |
 | Aspire CLI logs for `ticketsapi` and `webfrontend` | Runtime diagnostics | Passed | Migration, Azurite container access, service discovery, and attachment requests observed without application errors. |
 | Playwright browser smoke flow | Web attachment experience | Passed | Empty state, upload, list, same-origin download, and delete verified; no browser console errors. |
 | Direct Azurite blob enumeration/assertion | Exact container/blob test assertion | Unavailable | Existing distributed tests validate behavior through the API; direct resource-client assertions were not added. |
-| Deterministic coordinator/failure-injection tests | Compensation and delete failure seams | Pending | Current endpoint tests cover real storage behavior, but injected metadata-write/compensation/delete failure cases remain to be implemented. |
+| Deterministic failure-handling tests | Compensation and delete failure seams | Passed | 22 focused tests cover policy boundaries, compensation success/failure, metadata-save outcomes, and operation-specific storage error types. |
 
 ## Pre-Review Reconciliation
 
-* Plan markers and task-local context: `P01`, `P02`, `P03`, `P04-T02`, `P04-T03`, and `P04-T04` are checked; `P04-T01` remains unchecked because its coordinator tests are incomplete.
+* Plan markers and task-local context: `P01`, `P02`, `P03`, `P04`, and every task marker are checked.
 * Completed-work entries and handoff prose: Entries above reconcile the implemented API, Web, tests, runtime, and browser behavior.
-* Validation, blockers, remaining work, and follow-up items: Runtime and browser verification passed; direct Azurite assertions and deterministic failure seams remain.
-* Review readiness: Not ready for full-plan review until `P04-T01` is completed or explicitly accepted as follow-up.
+* Validation, blockers, remaining work, and follow-up items: Runtime, browser, distributed, and deterministic failure-seam verification passed; direct Azurite assertions remain an optional validation gap.
+* Review readiness: Ready for full-plan review; direct Azurite enumeration remains recorded as a follow-up validation gap.
 
 ## Blockers
 
@@ -88,7 +101,6 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 
 ## Remaining Work
 
-* Complete `P04-T01` by adding deterministic coordinator/failure-injection tests for metadata-write failure, compensation-delete failure, individual delete storage failure, and ticket-delete cleanup failure.
 * Add direct Azurite container/blob assertions if the pinned Aspire test resource API is verified and the scope remains required.
 
 ## Follow-Up Items
@@ -98,13 +110,13 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 
 ## Return-to-Caller State
 
-* Implementation execution status: Partially complete
-* Declared scope and markers: Full plan; `P01`, `P02`, `P03`, `P04-T02`, `P04-T03`, and `P04-T04` complete; `P04-T01` remains
-* Validation coverage: Full build/test suite, targeted policy tests, distributed AppHost tests, Aspire health/logs, and browser smoke flow
+* Implementation execution status: Complete
+* Declared scope and markers: Full plan; `P01`, `P02`, `P03`, `P04`, and all task markers complete
+* Validation coverage: Full build/test suite with 40 passing tests, 26 focused attachment tests, distributed AppHost tests, Aspire health/logs, and browser smoke flow
 * Blockers: None currently
-* Current plan updates: Completed implementation markers checked; browser MIME propagation fix recorded; remaining failure-seam tests and direct Azurite assertions recorded as follow-up
+* Current plan updates: All implementation markers checked; browser MIME propagation fix and deterministic failure-handling seam recorded
 * Business alignment entries: None; no BRD/PRD/ADR is cited
 * Planning and critique state: Approved; critique-6 passed
-* Follow-up items: Deterministic coordinator/failure-injection tests; optional direct Azurite assertions
-* Review readiness or no-handoff reason: Not ready for full-plan review because `P04-T01` remains incomplete
+* Follow-up items: Optional direct Azurite container/blob enumeration assertions
+* Review readiness or no-handoff reason: Ready for `/rpi-review`; no blocking implementation work remains
 * Continuation owner: User/manual RPI

@@ -1,3 +1,7 @@
+using Azure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using SupportHub.Tickets.Api.Features.Attachments;
 
 public class AttachmentPolicyTests
@@ -67,5 +71,197 @@ public class AttachmentPolicyTests
 
         Assert.Equal($"tickets/{ticketId:D}/{attachmentId:D}", blobName);
         Assert.DoesNotContain("document", blobName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task CompensationDeleteReportsSuccessAndAttemptsTheBlobDelete()
+    {
+        var store = new FakeAttachmentBlobStore();
+
+        var error = await AttachmentFailureHandling.TryDeleteBlobAsync(
+            store,
+            "tickets/ticket/attachment",
+            CancellationToken.None);
+
+        Assert.Null(error);
+        Assert.Equal(["tickets/ticket/attachment"], store.DeletedBlobNames);
+    }
+
+    [Fact]
+    public async Task CompensationDeleteReturnsFailureWithoutThrowing()
+    {
+        var expected = new RequestFailedException(503, "storage unavailable");
+        var store = new FakeAttachmentBlobStore(expected);
+
+        var error = await AttachmentFailureHandling.TryDeleteBlobAsync(
+            store,
+            "tickets/ticket/attachment",
+            CancellationToken.None);
+
+        Assert.Same(expected, error);
+        Assert.Equal(["tickets/ticket/attachment"], store.DeletedBlobNames);
+    }
+
+    [Fact]
+    public async Task MetadataSaveProblemsDistinguishSuccessfulAndFailedCompensation()
+    {
+        var metadataOnly = await ExecuteProblemAsync(
+            AttachmentFailureHandling.MetadataSaveProblem(null));
+        var compensationFailed = await ExecuteProblemAsync(
+            AttachmentFailureHandling.MetadataSaveProblem(new InvalidOperationException()));
+
+        Assert.Equal(503, metadataOnly.StatusCode);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-metadata-unavailable",
+            metadataOnly.Type);
+        Assert.Equal(503, compensationFailed.StatusCode);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-compensation-failed",
+            compensationFailed.Type);
+    }
+
+    [Fact]
+    public async Task MetadataSaveFailureCompensatesUploadedBlob()
+    {
+        var store = new FakeAttachmentBlobStore();
+        var persisted = false;
+
+        var result = await AttachmentFailureHandling.SaveMetadataWithCompensationAsync(
+            () => Task.FromException(
+                new DbUpdateException("metadata unavailable")),
+            store,
+            "tickets/ticket/attachment",
+            CancellationToken.None);
+
+        Assert.False(persisted);
+        Assert.Equal(["tickets/ticket/attachment"], store.DeletedBlobNames);
+        var problem = await ExecuteProblemAsync(result!);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-metadata-unavailable",
+            problem.Type);
+    }
+
+    [Fact]
+    public async Task CompensationFailureUsesReconciliationProblem()
+    {
+        var store = new FakeAttachmentBlobStore(
+            new RequestFailedException(503, "storage unavailable"));
+
+        var result = await AttachmentFailureHandling.SaveMetadataWithCompensationAsync(
+            () => Task.FromException(
+                new DbUpdateException("metadata unavailable")),
+            store,
+            "tickets/ticket/attachment",
+            CancellationToken.None);
+
+        var problem = await ExecuteProblemAsync(result!);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-compensation-failed",
+            problem.Type);
+    }
+
+    [Fact]
+    public async Task AttachmentDeleteDoesNotDeleteMetadataWhenBlobDeleteFails()
+    {
+        var metadataDeleted = false;
+        var result = await AttachmentFailureHandling.DeleteContentThenMetadataAsync(
+            () => Task.FromException(
+                new RequestFailedException(503, "storage unavailable")),
+            () =>
+            {
+                metadataDeleted = true;
+                return Task.CompletedTask;
+            });
+
+        Assert.False(metadataDeleted);
+        var problem = await ExecuteProblemAsync(result!);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-delete-failed",
+            problem.Type);
+    }
+
+    [Fact]
+    public async Task AttachmentDeleteRetainsMetadataWhenMetadataDeleteFails()
+    {
+        var blobDeleted = false;
+        var result = await AttachmentFailureHandling.DeleteContentThenMetadataAsync(
+            () =>
+            {
+                blobDeleted = true;
+                return Task.CompletedTask;
+            },
+            () => Task.FromException(
+                new DbUpdateException("metadata unavailable")));
+
+        Assert.True(blobDeleted);
+        var problem = await ExecuteProblemAsync(result!);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-metadata-unavailable",
+            problem.Type);
+    }
+
+    [Fact]
+    public async Task DeleteAndTicketCleanupStorageFailuresUseDistinctOperationTypes()
+    {
+        var delete = await ExecuteProblemAsync(
+            AttachmentFailureHandling.StorageProblem(
+                "delete",
+                new RequestFailedException(503, "storage unavailable")));
+        var ticketDelete = await ExecuteProblemAsync(
+            AttachmentFailureHandling.StorageProblem(
+                "ticket-delete",
+                new RequestFailedException(404, "missing")));
+
+        Assert.Equal(503, delete.StatusCode);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-delete-failed",
+            delete.Type);
+        Assert.Equal(404, ticketDelete.StatusCode);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-ticket-delete-failed",
+            ticketDelete.Type);
+    }
+
+    private static Task<ProblemDetailsDocument> ExecuteProblemAsync(IResult result)
+    {
+        var problem = Assert.IsType<ProblemHttpResult>(result);
+        var type = problem.ProblemDetails.Type
+            ?? throw new InvalidOperationException("The problem type was not set.");
+        return Task.FromResult(new ProblemDetailsDocument(problem.StatusCode, type));
+    }
+
+    private sealed record ProblemDetailsDocument(int StatusCode, string Type);
+
+    private sealed class FakeAttachmentBlobStore(RequestFailedException? deleteException = null)
+        : IAttachmentBlobStore
+    {
+        public List<string> DeletedBlobNames { get; } = [];
+
+        public Task EnsureContainerAsync(CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+
+        public Task UploadAsync(
+            string blobName,
+            Stream content,
+            string contentType,
+            CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+
+        public Task<AttachmentBlobDownload?> OpenReadAsync(
+            string blobName,
+            string contentType,
+            string fileName,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<AttachmentBlobDownload?>(null);
+
+        public Task<bool> DeleteIfExistsAsync(
+            string blobName,
+            CancellationToken cancellationToken)
+        {
+            DeletedBlobNames.Add(blobName);
+            return deleteException is null
+                ? Task.FromResult(true)
+                : Task.FromException<bool>(deleteException);
+        }
     }
 }

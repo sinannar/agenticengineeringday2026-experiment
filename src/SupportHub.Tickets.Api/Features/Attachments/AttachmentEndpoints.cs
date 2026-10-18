@@ -128,13 +128,13 @@ public static class AttachmentEndpoints
         }
         catch (AttachmentTooLargeException exception)
         {
-            await TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+            await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
             return AttachmentPolicy.TooLarge(exception.Message);
         }
         catch (RequestFailedException exception)
         {
-            await TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
-            return StorageProblem("upload", exception);
+            await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+            return AttachmentFailureHandling.StorageProblem("upload", exception);
         }
 
         if (!AttachmentPolicy.TryValidate(
@@ -146,7 +146,7 @@ public static class AttachmentEndpoints
         {
             if (uploaded)
             {
-                await TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+                await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
             }
 
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -161,7 +161,7 @@ public static class AttachmentEndpoints
                 string.Equals(extraDisposition.DispositionType.Value, "form-data", StringComparison.OrdinalIgnoreCase) &&
                 (extraDisposition.FileName.Value is not null || extraDisposition.FileNameStar.Value is not null))
             {
-                await TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+                await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
                     ["file"] = ["Only one file may be uploaded at a time."]
@@ -181,24 +181,14 @@ public static class AttachmentEndpoints
         };
 
         db.Attachments.Add(attachment);
-        try
+        var metadataSaveFailure = await AttachmentFailureHandling.SaveMetadataWithCompensationAsync(
+            () => db.SaveChangesAsync(cancellationToken),
+            blobStore,
+            blobName,
+            cancellationToken);
+        if (metadataSaveFailure is not null)
         {
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        catch (Exception exception) when (exception is DbUpdateException or TimeoutException)
-        {
-            var cleanupError = await TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
-            return cleanupError is null
-                ? Results.Problem(
-                    statusCode: StatusCodes.Status503ServiceUnavailable,
-                    type: "https://supporthub.dev/problems/attachment-metadata-unavailable",
-                    title: "Attachment metadata could not be saved",
-                    detail: "The attachment upload could not be completed.")
-                : Results.Problem(
-                    statusCode: StatusCodes.Status503ServiceUnavailable,
-                    type: "https://supporthub.dev/problems/attachment-compensation-failed",
-                    title: "Attachment upload could not be completed",
-                    detail: "The uploaded content could not be reconciled safely.");
+            return metadataSaveFailure;
         }
 
         return Results.Created(
@@ -244,7 +234,7 @@ public static class AttachmentEndpoints
         }
         catch (RequestFailedException exception)
         {
-            return StorageProblem("download", exception);
+            return AttachmentFailureHandling.StorageProblem("download", exception);
         }
     }
 
@@ -264,27 +254,13 @@ public static class AttachmentEndpoints
             return Results.NotFound();
         }
 
-        try
-        {
-            await blobStore.DeleteIfExistsAsync(attachment.BlobName, cancellationToken);
-        }
-        catch (RequestFailedException exception)
-        {
-            return StorageProblem("delete", exception);
-        }
-
         db.Attachments.Remove(attachment);
-        try
+        var deleteFailure = await AttachmentFailureHandling.DeleteContentThenMetadataAsync(
+            () => blobStore.DeleteIfExistsAsync(attachment.BlobName, cancellationToken),
+            () => db.SaveChangesAsync(cancellationToken));
+        if (deleteFailure is not null)
         {
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            return Results.Problem(
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                type: "https://supporthub.dev/problems/attachment-metadata-unavailable",
-                title: "Attachment metadata could not be deleted",
-                detail: "The attachment content was deleted, but its metadata could not be removed. Retry the operation.");
+            return deleteFailure;
         }
 
         return Results.NoContent();
@@ -308,7 +284,7 @@ public static class AttachmentEndpoints
             }
             catch (RequestFailedException exception)
             {
-                return StorageProblem("ticket-delete", exception);
+                return AttachmentFailureHandling.StorageProblem("ticket-delete", exception);
             }
         }
 
@@ -321,33 +297,6 @@ public static class AttachmentEndpoints
         TicketDbContext db,
         CancellationToken cancellationToken) =>
         await db.Tickets.AsNoTracking().AnyAsync(x => x.Id == ticketId, cancellationToken);
-
-    private static async Task<Exception?> TryDeleteBlobAsync(
-        IAttachmentBlobStore blobStore,
-        string blobName,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await blobStore.DeleteIfExistsAsync(blobName, cancellationToken);
-            return null;
-        }
-        catch (Exception exception)
-        {
-            return exception;
-        }
-    }
-
-    private static IResult StorageProblem(string operation, RequestFailedException exception) =>
-        Results.Problem(
-            statusCode: exception.Status == 404
-                ? StatusCodes.Status404NotFound
-                : StatusCodes.Status503ServiceUnavailable,
-            type: $"https://supporthub.dev/problems/attachment-{operation}-failed",
-            title: $"Attachment {operation} failed",
-            detail: exception.Status == 404
-                ? "The attachment content could not be found."
-                : "The attachment storage service is unavailable.");
 
     private sealed class CountingReadStream(Stream inner, long maximumBytes) : Stream
     {
