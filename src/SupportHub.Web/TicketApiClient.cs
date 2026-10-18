@@ -83,6 +83,13 @@ public class TicketApiClient(HttpClient httpClient)
             $"tickets/{ticketId}/activity",
             cancellationToken);
 
+    public Task<SlaStatusModel> GetSlaStatusAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken = default) =>
+        GetRequiredAsync<SlaStatusModel>(
+            $"tickets/{ticketId}/sla",
+            cancellationToken);
+
     public async Task<AttachmentModel> UploadAttachmentAsync(
         Guid ticketId,
         IBrowserFile file,
@@ -225,6 +232,29 @@ public sealed record ActivityHistoryModel(
     DateTimeOffset OccurredAtUtc,
     string? Actor,
     JsonElement Details);
+
+public sealed record SlaStatusModel(
+    Guid TicketId,
+    Guid CustomerId,
+    TicketPriorityModel Priority,
+    SupportTierModel SupportTier,
+    TicketStatusModel TicketStatus,
+    DateTimeOffset CreatedAtUtc,
+    TimeSpan TargetDuration,
+    DateTimeOffset DeadlineUtc,
+    DateTimeOffset EvaluatedAtUtc,
+    SlaStateModel State,
+    TimeSpan? Remaining,
+    TimeSpan? Lateness,
+    string PolicyVersion);
+
+public enum SlaStateModel
+{
+    OnTrack,
+    AtRisk,
+    Breached,
+    Completed
+}
 
 internal sealed class ProgressStreamContent(
     Stream source,

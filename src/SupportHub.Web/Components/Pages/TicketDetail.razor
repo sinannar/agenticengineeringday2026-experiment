@@ -44,6 +44,43 @@ else if (_ticket is not null)
         <dt class="col-sm-3">Updated</dt>
         <dd class="col-sm-9">@_ticket.UpdatedAt</dd>
     </dl>
+    <section aria-labelledby="sla-heading" class="mt-4">
+        <h2 id="sla-heading">Service-level agreement</h2>
+        @if (_slaLoading)
+        {
+            <p role="status">Loading SLA status...</p>
+        }
+        else if (_slaError is not null)
+        {
+            <div class="alert alert-warning" role="alert">@_slaError</div>
+        }
+        else if (_sla is not null)
+        {
+            <dl class="row">
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9"><strong>@FormatSlaState(_sla.State)</strong></dd>
+                <dt class="col-sm-3">Support tier</dt>
+                <dd class="col-sm-9">@_sla.SupportTier</dd>
+                <dt class="col-sm-3">Deadline</dt>
+                <dd class="col-sm-9">@_sla.DeadlineUtc</dd>
+                @if (_sla.Remaining is not null)
+                {
+                    <dt class="col-sm-3">Time remaining</dt>
+                    <dd class="col-sm-9">@_sla.Remaining</dd>
+                }
+                else if (_sla.Lateness is not null)
+                {
+                    <dt class="col-sm-3">Overdue by</dt>
+                    <dd class="col-sm-9">@_sla.Lateness</dd>
+                }
+                else
+                {
+                    <dt class="col-sm-3">Evaluation</dt>
+                    <dd class="col-sm-9">SLA clock completed.</dd>
+                }
+            </dl>
+        }
+    </section>
     <section aria-labelledby="attachments-heading" class="mt-4">
         <h2 id="attachments-heading">Attachments</h2>
         @if (_attachmentsLoading)
@@ -127,6 +164,9 @@ else if (_ticket is not null)
     private bool _loading = true;
     private bool _notFound;
     private string? _error;
+    private SlaStatusModel? _sla;
+    private bool _slaLoading;
+    private string? _slaError;
     private IReadOnlyList<SupportHub.Web.AttachmentModel> _attachments = [];
     private bool _attachmentsLoading;
     private bool _uploading;
@@ -149,6 +189,7 @@ else if (_ticket is not null)
             {
                 var customer = await CustomerApi.GetCustomerAsync(_ticket.CustomerId);
                 _customerName = customer?.Name ?? "Customer unavailable";
+                await LoadSlaAsync();
                 await LoadAttachmentsAsync();
                 await LoadActivityAsync();
             }
@@ -164,6 +205,27 @@ else if (_ticket is not null)
         finally
         {
             _loading = false;
+        }
+    }
+
+    private async Task LoadSlaAsync()
+    {
+        _slaLoading = true;
+        _slaError = null;
+        _sla = null;
+        try
+        {
+            _sla = await TicketApi.GetSlaStatusAsync(Id);
+        }
+        catch (TicketApiException exception)
+        {
+            _slaError = exception.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable
+                ? "SLA status is temporarily unavailable. Please try again."
+                : exception.Message;
+        }
+        finally
+        {
+            _slaLoading = false;
         }
     }
 
@@ -269,4 +331,14 @@ else if (_ticket is not null)
     private static string FormatEventType(string eventType) =>
         eventType.Replace("ticket.", string.Empty, StringComparison.Ordinal)
             .Replace("-", " ", StringComparison.Ordinal);
+
+    private static string FormatSlaState(SlaStateModel state) =>
+        state switch
+        {
+            SlaStateModel.OnTrack => "On track",
+            SlaStateModel.AtRisk => "At risk",
+            SlaStateModel.Breached => "Breached",
+            SlaStateModel.Completed => "Completed",
+            _ => state.ToString()
+        };
 }

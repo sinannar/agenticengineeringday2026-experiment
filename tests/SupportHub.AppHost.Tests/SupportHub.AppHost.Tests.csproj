@@ -27,6 +27,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SupportHub.AppHost\SupportHub.AppHost.csproj" />
     <ProjectReference Include="..\..\src\SupportHub.Activity.Worker\SupportHub.Activity.Worker.csproj" Aliases="ActivityWorker" />
+    <ProjectReference Include="..\..\src\SupportHub.Sla.Console\SupportHub.Sla.Console.csproj" />
+    <ProjectReference Include="..\..\src\SupportHub.Sla.Worker\SupportHub.Sla.Worker.csproj" />
+    <ProjectReference Include="..\..\src\SupportHub.Tickets.Api\SupportHub.Tickets.Api.csproj" />
   </ItemGroup>
 
 </Project>

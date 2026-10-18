@@ -11,7 +11,7 @@
 
 * Bottom line: Plan a Tickets API-owned SLA evaluator and scan API, then connect the SLA Worker, Operations Console, Blazor UI, and tests to that single behavior.
 * Why this matters: The design preserves SupportHub data ownership, keeps scheduled/manual/UI results consistent, and makes time-dependent behavior deterministic.
-* Planning result: In progress; confirmed research and policy decisions are recorded, with phase drafting and standard critique pending.
+* Planning result: Approved implementation plan; implementation is in progress under the full-plan scope.
 * Confidence and uncertainty: High confidence in architecture and policy semantics. The main implementation risk is bounded customer-tier lookup during scans because tier data remains owned by Customers API.
 
 ### What You May Not Know
@@ -83,6 +83,8 @@ flowchart LR
 
 ### P01 — Establish the Tickets API SLA policy and deterministic evaluator
 
+- [x] `P01` Establish the Tickets API SLA policy and deterministic evaluator
+
 Goals:
 
 * Establish one feature-local policy and evaluator that produces the same result for API requests, scheduled scans, manual scans, and UI projections.
@@ -91,6 +93,8 @@ Goals:
 Tasks:
 
 #### P01-T01 — Define SLA policy inputs, targets, states, and projection contracts
+
+- [x] `P01-T01` Define SLA policy inputs, targets, states, and projection contracts
 
 Goals:
 
@@ -149,6 +153,8 @@ Dependencies:
 
 #### P01-T02 — Implement the pure, injectable SLA evaluator
 
+- [x] `P01-T02` Implement the pure, injectable SLA evaluator
+
 Goals:
 
 * Calculate deadlines and states correctly at exact boundaries without depending on wall-clock time, HTTP, logging, or EF Core.
@@ -181,6 +187,8 @@ Dependencies:
 * Depends on `P01-T01`.
 
 #### P01-T03 — Extend the customer-tier boundary for SLA orchestration
+
+- [x] `P01-T03` Extend the customer-tier boundary for SLA orchestration
 
 Goals:
 
@@ -229,6 +237,8 @@ flowchart LR
 
 ### P02 — Expose bounded SLA status and scan APIs from Tickets API
 
+- [x] `P02` Expose bounded SLA status and scan APIs from Tickets API
+
 Goals:
 
 * Make the evaluator usable by all clients through explicit HTTP contracts while keeping scan behavior bounded, cancellation-aware, and observable.
@@ -236,6 +246,8 @@ Goals:
 Tasks:
 
 #### P02-T01 — Add single-ticket SLA status endpoint behavior
+
+- [x] `P02-T01` Add single-ticket SLA status endpoint behavior
 
 Goals:
 
@@ -254,6 +266,10 @@ Details:
 * Follow existing ticket endpoint route and response conventions. The endpoint may internally compose ticket persistence, customer-tier lookup, policy selection, and evaluator invocation, but none of these details belong in the public contract.
 * Keep terminal ticket responses useful to UI callers by returning explicit terminal state and deadline metadata where available.
 
+Guidance:
+
+* Reuse `SlaStatusResponse`, `SlaPolicy`, and `SlaEvaluator` from `src/SupportHub.Tickets.Api/Features/Tickets/` rather than introducing endpoint-local status calculations.
+
 References:
 
 * [src/SupportHub.Tickets.Api/Features/Tickets/TicketEndpoints.cs](../../../src/SupportHub.Tickets.Api/Features/Tickets/TicketEndpoints.cs)
@@ -265,6 +281,8 @@ Dependencies:
 * Depends on `P01-T01`, `P01-T02`, and `P01-T03`.
 
 #### P02-T02 — Add bounded SLA scan endpoint behavior
+
+- [x] `P02-T02` Add bounded SLA scan endpoint behavior
 
 Goals:
 
@@ -284,6 +302,10 @@ Details:
 * Use a scan application service that obtains a bounded ticket snapshot of at most `50`, resolves tiers with a maximum of `4` concurrent calls, evaluates through `SlaEvaluator`, and maps the result contract. The worker and console should only select operational request options and render/log results.
 * Use one `EvaluatedAtUtc` per scan, passing it into the evaluator rather than allowing each item to read the clock independently.
 
+Guidance:
+
+* Customer tier resolution is available through `CustomerLookupClient.GetSupportTierAsync`; it returns `CustomerTierLookupResult` with `NotFound` and `Unavailable` distinctions.
+
 References:
 
 * [src/SupportHub.Tickets.Api/Features/Tickets/TicketEndpoints.cs](../../../src/SupportHub.Tickets.Api/Features/Tickets/TicketEndpoints.cs)
@@ -296,6 +318,8 @@ Dependencies:
 * Depends on `P01-T01`, `P01-T02`, `P01-T03`, and `P02-T01`.
 
 #### P02-T03 — Register production dependencies and API observability
+
+- [x] `P02-T03` Register production dependencies and API observability
 
 Goals:
 
@@ -346,6 +370,8 @@ flowchart LR
 
 ### P03 — Connect scheduled and on-demand operational clients
 
+- [x] `P03` Connect scheduled and on-demand operational clients
+
 Goals:
 
 * Replace the Worker placeholder loop and Console placeholder operation with thin clients of the Tickets API scan contract.
@@ -354,6 +380,8 @@ Goals:
 Tasks:
 
 #### P03-T01 — Implement non-overlapping scheduled scans in SLA Worker
+
+- [x] `P03-T01` Implement non-overlapping scheduled scans in SLA Worker
 
 Goals:
 
@@ -386,6 +414,8 @@ Dependencies:
 * Depends on `P02-T02` and `P02-T03`.
 
 #### P03-T02 — Add the Operations Console on-demand SLA scan
+
+- [x] `P03-T02` Add the Operations Console on-demand SLA scan
 
 Goals:
 
@@ -437,6 +467,8 @@ flowchart LR
 
 ### P04 — Add typed Web integration and SLA presentation
 
+- [x] `P04` Add typed Web integration and SLA presentation
+
 Goals:
 
 * Present the Tickets API SLA projection in Blazor with clear semantic states and existing page-state conventions.
@@ -445,6 +477,8 @@ Goals:
 Tasks:
 
 #### P04-T01 — Extend the typed Ticket API client with SLA contracts
+
+- [x] `P04-T01` Extend the typed Ticket API client with SLA contracts
 
 Goals:
 
@@ -473,6 +507,8 @@ Dependencies:
 * Depends on `P02-T01`.
 
 #### P04-T02 — Render deadline, state, and warnings in ticket UI
+
+- [x] `P04-T02` Render deadline, state, and warnings in ticket UI
 
 Goals:
 
@@ -518,6 +554,8 @@ flowchart LR
 
 ### P05 — Prove policy, service boundaries, and Aspire runtime behavior
 
+- [ ] `P05` Prove policy, service boundaries, and Aspire runtime behavior
+
 Goals:
 
 * Lock the exact policy boundaries in fast tests, prove API/client composition in distributed tests, and verify scheduled/manual operations through Aspire evidence.
@@ -525,6 +563,8 @@ Goals:
 Tasks:
 
 #### P05-T01 — Add deterministic policy and evaluator unit tests
+
+- [x] `P05-T01` Add deterministic policy and evaluator unit tests
 
 Goals:
 
@@ -543,6 +583,10 @@ Details:
 * Prefer table-driven cases for policy mapping and named tests for boundary semantics.
 * If the test project needs a fake-time package, update central package management minimally and only after confirming the framework does not already provide it.
 
+Guidance:
+
+* The evaluator under test is `SlaEvaluator`; use a test-local `TimeProvider` equivalent because the current test project has no fake-time package dependency.
+
 References:
 
 * [tests/SupportHub.Tickets.Api.Tests/TicketValidationTests.cs](../../../tests/SupportHub.Tickets.Api.Tests/TicketValidationTests.cs)
@@ -554,6 +598,8 @@ Dependencies:
 * Depends on `P01-T01` and `P01-T02`.
 
 #### P05-T02 — Add Tickets API and distributed integration coverage
+
+- [x] `P05-T02` Add Tickets API and distributed integration coverage
 
 Goals:
 
@@ -589,6 +635,8 @@ Dependencies:
 
 #### P05-T03 — Test operational clients and Blazor SLA behavior
 
+- [x] `P05-T03` Test operational clients and Blazor SLA behavior
+
 Goals:
 
 * Prove that Worker/Console transport behavior and the changed ticket detail surface consume the server contract correctly without duplicating policy.
@@ -607,6 +655,10 @@ Details:
 * Use a short test-only Worker interval or an explicit trigger seam for runtime coverage, while unit-testing the client request/response path deterministically.
 * Record a browser verification limitation explicitly if an inherited emulator or authentication constraint prevents the unavailable/error scenario.
 
+Guidance:
+
+* The operational transport seams are `SlaScanClient` in `src/SupportHub.Sla.Worker/SlaScanClient.cs` and `src/SupportHub.Sla.Console/SlaScanClient.cs`; both post the same bounded scan request to `/tickets/sla/scan`.
+
 References:
 
 * [src/SupportHub.Sla.Worker/Program.cs](../../../src/SupportHub.Sla.Worker/Program.cs)
@@ -620,6 +672,8 @@ Dependencies:
 * Depends on `P03-T01`, `P03-T02`, and `P04-T02`.
 
 #### P05-T04 — Run build, tests, and Aspire runtime verification
+
+- [x] `P05-T04` Run build, tests, and Aspire runtime verification
 
 Goals:
 
@@ -706,6 +760,7 @@ flowchart LR
 | Continuation owner | user/manual RPI |
 | Required gates or confirmations | User approval before implementation |
 | Next action | Invoke `/rpi-implement` after approval |
+| Implementation scope | Full plan; `P01` through `P05-T04` complete |
 
 ## Goals
 

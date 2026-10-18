@@ -30,6 +30,46 @@ public class TicketsApiTests
     }
 
     [Fact]
+    public async Task TicketsApi_EvaluatesSingleTicketSlaAndBoundedScan()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "SLA Customer", "sla@example.com");
+        var ticket = await CreateTicketAsync(ticketsClient, customer.Id, "SLA ticket");
+
+        using var statusResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/sla");
+        statusResponse.EnsureSuccessStatusCode();
+        var status = await statusResponse.Content.ReadFromJsonAsync<SlaStatusResponse>(JsonOptions);
+        Assert.NotNull(status);
+        Assert.Equal(ticket.Id, status!.TicketId);
+        Assert.Equal(customer.Id, status.CustomerId);
+        Assert.Equal("Standard", status.SupportTier);
+        Assert.Equal("Medium", status.Priority);
+        Assert.Equal("OnTrack", status.State);
+        Assert.Equal(TimeSpan.FromHours(12), status.TargetDuration);
+        Assert.Equal("v1", status.PolicyVersion);
+
+        using var scanResponse = await ticketsClient.PostAsJsonAsync(
+            "/tickets/sla/scan",
+            new { priority = "Medium", maxItems = 50 },
+            JsonOptions);
+        scanResponse.EnsureSuccessStatusCode();
+        var scan = await scanResponse.Content.ReadFromJsonAsync<SlaScanResponse>(JsonOptions);
+        Assert.NotNull(scan);
+        Assert.Equal(1, scan!.EvaluatedCount);
+        Assert.Empty(scan.Failures);
+        Assert.Contains(scan.Items, item => item.TicketId == ticket.Id && item.State == "OnTrack");
+    }
+
+    [Fact]
     public async Task TicketsApi_ManagesTicketLifecycleAndFilters()
     {
         ConfigureTestEnvironment();
@@ -388,6 +428,34 @@ public sealed record AttachmentResponse(
     string ContentType,
     long Size,
     DateTimeOffset CreatedAt);
+
+public sealed record SlaStatusResponse(
+    Guid TicketId,
+    Guid CustomerId,
+    string Priority,
+    string SupportTier,
+    string TicketStatus,
+    DateTimeOffset CreatedAtUtc,
+    TimeSpan TargetDuration,
+    DateTimeOffset DeadlineUtc,
+    DateTimeOffset EvaluatedAtUtc,
+    string State,
+    TimeSpan? Remaining,
+    TimeSpan? Lateness,
+    string PolicyVersion);
+
+public sealed record SlaScanResponse(
+    DateTimeOffset EvaluatedAtUtc,
+    IReadOnlyList<SlaStatusResponse> Items,
+    int EvaluatedCount,
+    int FailedCount,
+    IReadOnlyList<SlaScanFailure> Failures);
+
+public sealed record SlaScanFailure(
+    Guid TicketId,
+    Guid CustomerId,
+    string Code,
+    string Message);
 
 public sealed record ActivityHistoryResponse(
     Guid TicketId,
