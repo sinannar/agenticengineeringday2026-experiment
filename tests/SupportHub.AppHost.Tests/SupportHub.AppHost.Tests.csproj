@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SupportHub.AppHost\SupportHub.AppHost.csproj" />
+    <ProjectReference Include="..\..\src\SupportHub.Activity.Worker\SupportHub.Activity.Worker.csproj" Aliases="ActivityWorker" />
   </ItemGroup>
 
 </Project>

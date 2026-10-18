@@ -51,11 +51,24 @@ public sealed class OutboxMaintenanceService(
 
 public static class OutboxMaintenanceEndpoints
 {
+    private const string MaintenanceKeyHeader = "X-SupportHub-Internal-Key";
+    private const string MaintenanceKeyConfiguration = "SUPPORTHUB_INTERNAL_MAINTENANCE_KEY";
+
     public static IEndpointRouteBuilder MapOutboxMaintenanceEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/internal/outbox").WithTags("Internal Outbox");
-        group.MapGet("/terminal", async (TicketDbContext db, CancellationToken cancellationToken) =>
-            await db.OutboxEvents
+        group.MapGet("/terminal", async (
+            HttpRequest request,
+            IConfiguration configuration,
+            TicketDbContext db,
+            CancellationToken cancellationToken) =>
+        {
+            if (!IsAuthorized(request, configuration))
+            {
+                return Results.NotFound();
+            }
+
+            return Results.Ok(await db.OutboxEvents
                 .AsNoTracking()
                 .Where(x => x.Status == OutboxEventStatus.TerminalFailure)
                 .OrderBy(x => x.OccurredAtUtc)
@@ -69,12 +82,20 @@ public static class OutboxMaintenanceEndpoints
                     x.OccurredAtUtc,
                     x.LastFailedAtUtc))
                 .ToListAsync(cancellationToken));
+        });
 
         group.MapPost("/{eventId:guid}/replay", async (
             Guid eventId,
+            HttpRequest request,
+            IConfiguration configuration,
             TicketDbContext db,
             CancellationToken cancellationToken) =>
         {
+            if (!IsAuthorized(request, configuration))
+            {
+                return Results.NotFound();
+            }
+
             var item = await db.OutboxEvents.SingleOrDefaultAsync(x => x.EventId == eventId, cancellationToken);
             if (item is null)
             {
@@ -89,6 +110,14 @@ public static class OutboxMaintenanceEndpoints
         });
 
         return endpoints;
+    }
+
+    private static bool IsAuthorized(HttpRequest request, IConfiguration configuration)
+    {
+        var configuredKey = configuration[MaintenanceKeyConfiguration];
+        return !string.IsNullOrWhiteSpace(configuredKey)
+            && request.Headers.TryGetValue(MaintenanceKeyHeader, out var providedKey)
+            && string.Equals(providedKey.ToString(), configuredKey, StringComparison.Ordinal);
     }
 }
 

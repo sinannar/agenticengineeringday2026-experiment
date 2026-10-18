@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 
 public class TicketsApiTests
 {
+    private const string InternalMaintenanceKey = "activity-test-key";
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -162,9 +164,16 @@ public class TicketsApiTests
 
         foreach (var item in history.Items)
         {
-            using var replayResponse = await ticketsClient.PostAsync(
+            using var unauthorizedReplayResponse = await ticketsClient.PostAsync(
                 $"/internal/outbox/{item.Id}/replay",
                 content: null);
+            Assert.Equal(HttpStatusCode.NotFound, unauthorizedReplayResponse.StatusCode);
+
+            using var replayRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"/internal/outbox/{item.Id}/replay");
+            replayRequest.Headers.Add("X-SupportHub-Internal-Key", InternalMaintenanceKey);
+            using var replayResponse = await ticketsClient.SendAsync(replayRequest);
             Assert.Equal(HttpStatusCode.Accepted, replayResponse.StatusCode);
         }
 
@@ -309,6 +318,7 @@ public class TicketsApiTests
     {
         Environment.SetEnvironmentVariable("SUPPORTHUB_TEST_MODE", "true");
         Environment.SetEnvironmentVariable("SUPPORTHUB_APPLY_MIGRATIONS", "true");
+        Environment.SetEnvironmentVariable("SUPPORTHUB_INTERNAL_MAINTENANCE_KEY", InternalMaintenanceKey);
     }
 
     private static async Task<CustomerResponse> CreateCustomerAsync(

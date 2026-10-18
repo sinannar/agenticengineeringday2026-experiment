@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Azure.Messaging.ServiceBus;
 using SupportHub.Activity.Contracts;
 
@@ -10,10 +9,6 @@ public sealed class Worker(
     ActivityStore activityStore,
     ILogger<Worker> logger) : BackgroundService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() }
-    };
     private ServiceBusProcessor? processor;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -50,12 +45,7 @@ public sealed class Worker(
         ActivityEvent? activity;
         try
         {
-            activity = JsonSerializer.Deserialize<ActivityEvent>(args.Message.Body, JsonOptions);
-            if (activity is null || activity.EventId == Guid.Empty || activity.TicketId == Guid.Empty
-                || activity.SchemaVersion != 1 || string.IsNullOrWhiteSpace(activity.EventType))
-            {
-                throw new InvalidDataException("The activity event envelope is invalid.");
-            }
+            activity = ActivityEventValidator.Validate(args.Message.Body.ToString());
         }
         catch (Exception exception) when (exception is JsonException or InvalidDataException)
         {

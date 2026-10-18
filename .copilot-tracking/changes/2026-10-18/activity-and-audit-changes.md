@@ -9,15 +9,15 @@
 
 ## Execution Status
 
-* Status: `Complete`
-* Declared invocation scope: `full_plan`
-* Completed scope markers: `P01`-`P06` and all `Pxx-Txx` tasks
-* All remaining active-plan markers: `none`
-* Status basis: The approved full plan is implemented and validated through build, unit, distributed, runtime, and browser checks.
+* Status: `Partial`
+* Declared invocation scope: `RV-001`, `RV-002`, `RV-003`
+* Completed scope markers: `RV-001`, `RV-002`, and the implementable portions of `RV-003`; prior full-plan implementation remains complete.
+* All remaining active-plan markers: `RV-003` transient dependency-redelivery validation remains open.
+* Status basis: Operational access and duplicate-equivalence defects are fixed and validated; malformed/unsupported-event coverage and the full solution suite pass, but emulator-level transient redelivery remains unverified.
 
 ## Execution Summary
 
-Implemented the approved outbox, Service Bus, Activity Worker, Cosmos, backend proxy, Blazor timeline, and Aspire-validation sequence. Delivery is at-least-once with stable event identity and conflict-safe Cosmos persistence; the UI reads activity only through Tickets API.
+The original Activity and Audit implementation is complete. This invocation remediates the accepted review findings by protecting operational outbox routes, enforcing complete duplicate equivalence, and adding focused validation while retaining the existing service boundaries and at-least-once model.
 
 ## Completed Work
 
@@ -53,6 +53,7 @@ Added serialized event-contract tests and an Aspire integration test covering cr
 
 * `P04-T00` resolved in favor of upgrading the existing Worker project to `Microsoft.NET.Sdk.Web` and retaining its hosted consumer; no new deployed service was introduced.
 * The Linux Cosmos emulator required explicit Newtonsoft JSON property names (`id`, `ticketId`, etc.) and string-normalized persisted values. This is an implementation compatibility detail, not a change to the wire contract.
+* Review remediation updated `P02-T03` to require a configured internal maintenance key for outbox inspection/replay and updated `P03-T03` to require equivalence across every persisted immutable event field. The accepted `RV-003` follow-up is now limited to transient dependency-redelivery coverage because malformed/unsupported validation and full-suite evidence are complete.
 
 ## Business Alignment
 
@@ -69,14 +70,44 @@ Added serialized event-contract tests and an Aspire integration test covering cr
 | Aspire event/history integration | `P06-T02` | Passed | Targeted `TicketsApiTests.TicketChanges_AreAvailableThroughActivityHistory` — passed, including duplicate replay count. |
 | Aspire runtime health/logs | `P06-T03` | Passed | Healthy `ticketsapi`, `activity-worker`, `messaging`, and `cosmos`; publisher send, consumer processing, and Cosmos-backed history observed. |
 | Browser timeline | `P05-T02`, `P06-T03` | Passed | Playwright snapshot shows populated `Activity history` region with `created` entry. |
-| Full solution test suite | Full plan | Incomplete | `rtk dotnet test SupportHub.slnx --no-restore` exceeded the 480-second observation window without output and was stopped; targeted suites and the Activity integration test passed. |
+| Full solution test suite (earlier attempt) | Full plan | Incomplete | An earlier concurrent/initial run exceeded the observation window without output and was stopped. |
+| Remediation focused tests | `RV-001`-`RV-003` | Passed | `rtk dotnet test tests/SupportHub.AppHost.Tests/SupportHub.AppHost.Tests.csproj --no-restore --filter "FullyQualifiedName~ActivityStoreTests\|FullyQualifiedName~ActivityEventValidatorTests\|FullyQualifiedName~TicketChanges_AreAvailableThroughActivityHistory"` — 4 passed. |
+| Remediation full solution tests | `RV-003` | Passed | `rtk dotnet test SupportHub.slnx --no-restore` — 48 passed; existing MessagePack and redundant hosting-package warnings remain. |
+
+## Review Remediation
+
+### RV-001 — Protect operational outbox maintenance routes
+
+* Related finding: `RV-001`
+* Files:
+  * [src/SupportHub.Tickets.Api/Features/Activity/OutboxMaintenanceService.cs](../../../src/SupportHub.Tickets.Api/Features/Activity/OutboxMaintenanceService.cs)
+  * [src/SupportHub.AppHost/AppHost.cs](../../../src/SupportHub.AppHost/AppHost.cs)
+  * [tests/SupportHub.AppHost.Tests/TicketsApiTests.cs](../../../tests/SupportHub.AppHost.Tests/TicketsApiTests.cs)
+* Behavior or functionality changed: Outbox terminal enumeration and replay now require a configured internal maintenance key; absent or incorrect credentials do not reveal route or event existence. Aspire test configuration supplies the key only to the Tickets API test resource, and the distributed test verifies denied and authorized replay behavior.
+* Validation: Focused authorization and Activity flow tests passed; the full solution suite passed after remediation.
+
+### RV-002 — Enforce complete duplicate-event equivalence
+
+* Related finding: `RV-002`
+* Files:
+  * [src/SupportHub.Activity.Worker/ActivityStore.cs](../../../src/SupportHub.Activity.Worker/ActivityStore.cs)
+  * [tests/SupportHub.AppHost.Tests/ActivityStoreTests.cs](../../../tests/SupportHub.AppHost.Tests/ActivityStoreTests.cs)
+  * [tests/SupportHub.AppHost.Tests/SupportHub.AppHost.Tests.csproj](../../../tests/SupportHub.AppHost.Tests/SupportHub.AppHost.Tests.csproj)
+* Behavior or functionality changed: Same-ID activity deliveries are equivalent only when all persisted immutable event fields match, including schema version and actor; inconsistent envelopes remain eligible for conflicting-event dead-letter handling.
+* Validation: `ActivityStoreTests.EquivalentDocumentsRequireAllImmutableFieldsToMatch` passed; the distributed replay test also passed with denied and authorized access coverage.
+
+### RV-003 — Validation follow-up
+
+* Related finding: `RV-003`
+* Behavior or functionality changed: The plan now carries only the accepted residual requirement for deterministic transient dependency-redelivery coverage; malformed/unsupported-event validation and complete-suite execution are implemented.
+* Validation: `ActivityEventValidatorTests` passed for malformed and unsupported-schema payloads; the full solution suite passed. Transient dependency-redelivery remains open because reliable emulator failure injection is unavailable.
 
 ## Pre-Review Reconciliation
 
 * Plan markers and task-local context: `P01`-`P06` and all task markers are complete.
 * Completed-work entries and handoff prose: All implementation entries above have completion evidence.
-* Validation, blockers, remaining work, and follow-up items: Required validation passed; no active blocker remains.
-* Review readiness: `ready_for_review`.
+* Validation, blockers, remaining work, and follow-up items: Remediation checks pass; only transient dependency-redelivery evidence remains open as an explicit emulator/test-harness follow-up.
+* Review readiness: Remediation evidence is reconciled; no second review is required by the implementation workflow, though the existing review record remains the canonical assessment.
 
 ## Blockers
 
@@ -89,17 +120,17 @@ Added serialized event-contract tests and an Aspire integration test covering cr
 ## Follow-Up Items
 
 * Canonical plan list: [`.copilot-tracking/plans/2026-10-18/activity-and-audit-plan.md`](../../plans/2026-10-18/activity-and-audit-plan.md), `## Follow-Up Items`
-* None outside the active plan.
+* `RV-003`: Add deterministic transient dependency-redelivery coverage when a reliable emulator/test-harness failure-injection seam is available; implementation/test owner.
 
 ## Return-to-Caller State
 
-* Implementation execution status: `Complete`
-* Declared scope and markers: Full plan; `P01`-`P06` complete.
-* Validation coverage: Full solution build, Tickets API unit tests, Aspire integration, runtime health/logs, and browser timeline.
+* Implementation execution status: `Partial`
+* Declared scope and markers: Review remediation `RV-001`-`RV-003`; `RV-001` and `RV-002` complete, `RV-003` complete for malformed/unsupported validation and full-suite execution with transient redelivery still open; prior `P01`-`P06` implementation remains complete.
+* Validation coverage: Prior build, targeted tests, Aspire integration/runtime, and browser evidence remain valid; remediation focused tests passed (4), full solution tests passed (48), and transient dependency-redelivery remains unverified.
 * Blockers: None.
-* Current plan updates: All phase/task markers completed; hosting and Cosmos emulator compatibility discoveries recorded.
+* Current plan updates: `P02-T03` requires a maintenance key; `P03-T03` requires complete immutable-field equivalence; `RV-003` now records only the transient dependency-redelivery harness gap.
 * Business alignment entries: None; no BRD, PRD, or ADR applies.
 * Planning and critique state: Plan Ready; final critique passed; implementation complete.
-* Follow-up items: None.
-* Review readiness or no-handoff reason: Ready for `/rpi-review`.
+* Follow-up items: `RV-003` transient dependency-redelivery validation.
+* Review readiness or no-handoff reason: Ready for optional review follow-up; no second review is required by the implementation workflow. The residual transient-redelivery gap is explicitly recorded.
 * Continuation owner: User/standalone RPI.

@@ -44,9 +44,7 @@ public sealed class ActivityStore(CosmosClient cosmosClient)
                 document.Id,
                 new PartitionKey(document.TicketId),
                 cancellationToken: cancellationToken);
-            if (existing.Resource.EventType == document.EventType
-                && existing.Resource.OccurredAtUtc == document.OccurredAtUtc
-                && existing.Resource.DetailsJson == document.DetailsJson)
+            if (existing.Resource.IsEquivalentTo(document))
             {
                 return false;
             }
@@ -94,4 +92,13 @@ public sealed class ActivityDocument
     public string? Actor { get; set; }
     [JsonProperty("detailsJson")]
     public string DetailsJson { get; set; } = "{}";
+
+    public bool IsEquivalentTo(ActivityDocument other) =>
+        Id == other.Id
+        && EventType == other.EventType
+        && TicketId == other.TicketId
+        && OccurredAtUtc == other.OccurredAtUtc
+        && SchemaVersion == other.SchemaVersion
+        && Actor == other.Actor
+        && DetailsJson == other.DetailsJson;
 }

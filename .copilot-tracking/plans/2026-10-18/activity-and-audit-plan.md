@@ -474,7 +474,7 @@ Requirements:
 
 Details:
 
-This is the smallest operational surface that does not add a new project or Web dependency. Add internal-only `GET /internal/outbox/terminal` and `POST /internal/outbox/{eventId}/replay` operations on Tickets API, keep them outside public Web routes, and apply the strongest existing internal/management binding available in the host. The maintenance service remains the owner of claim recovery and cleanup. The operator response includes event ID, ticket ID, state, attempt count, last error category, and timestamps without the full payload; replay preserves the original payload and identity. Deterministic unit and endpoint tests verify enumeration, replay, claim recovery, and cleanup exclusion rules.
+This is the smallest operational surface that does not add a new project or Web dependency. Add internal-only `GET /internal/outbox/terminal` and `POST /internal/outbox/{eventId}/replay` operations on Tickets API, keep them outside public Web routes, and require the configured internal maintenance key before serving either route; an absent or mismatched key must not reveal route or event existence. The maintenance service remains the owner of claim recovery and cleanup. The operator response includes event ID, ticket ID, state, attempt count, last error category, and timestamps without the full payload; replay preserves the original payload and identity. Deterministic unit and endpoint tests verify access denial, authorized enumeration/replay, claim recovery, and cleanup exclusion rules.
 
 References:
 
@@ -558,7 +558,7 @@ Requirements:
 
 Details:
 
-Use create-if-absent or equivalent conflict-safe semantics; do not implement a read-then-create race as the only duplicate guard. The query service returns an explicit activity DTO rather than a Cosmos SDK type, but exposes no HTTP endpoint in this task. If equal timestamps occur, order by `eventId` or another deterministic stable key. The endpoint shape is finalized only after `P04-T00` verifies Worker hosting.
+Use create-if-absent or equivalent conflict-safe semantics; do not implement a read-then-create race as the only duplicate guard. A same-ID delivery is duplicate-safe only when every persisted immutable envelope field (`eventType`, `schemaVersion`, `ticketId`, `occurredAtUtc`, `actor`, and `details`) is equivalent; otherwise surface a data-integrity error for dead-letter handling. The query service returns an explicit activity DTO rather than a Cosmos SDK type, but exposes no HTTP endpoint in this task. If equal timestamps occur, order by `eventId` or another deterministic stable key. The endpoint shape is finalized only after `P04-T00` verifies Worker hosting.
 
 References:
 
@@ -918,7 +918,7 @@ Dependencies:
 
 ## Follow-Up Items
 
-* None outside the active plan.
+* `RV-003` validation follow-up: Deterministic malformed/unsupported-event validation and the full solution test suite are complete. Transient Service Bus/Cosmos redelivery remains unverified because the pinned emulator test setup does not provide a reliable failure-injection seam. Owner: implementation/test owner; clear when a deterministic dependency-failure harness is available.
 
 ## Relevant Artifacts
 

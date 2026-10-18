@@ -96,6 +96,10 @@ if (builder.Environment.IsDevelopment())
     ticketsapi.WithEnvironment("SUPPORTHUB_APPLY_MIGRATIONS", "true");
 }
 
+ticketsapi.WithEnvironment(
+    "SUPPORTHUB_INTERNAL_MAINTENANCE_KEY",
+    builder.Configuration["SUPPORTHUB_INTERNAL_MAINTENANCE_KEY"] ?? string.Empty);
+
 // ============================================================
 // Background Workers
 // ============================================================
