@@ -5,8 +5,22 @@ using System.Text.Json.Serialization;
 
 namespace SupportHub.Tickets.Api.Features.Tickets;
 
-public sealed class CustomerLookupClient(HttpClient httpClient)
+public interface ICustomerLookupClient
 {
+    Task<CustomerLookupResult> ExistsAsync(Guid customerId, CancellationToken cancellationToken);
+    Task<CustomerTierLookupResult> GetSupportTierAsync(Guid customerId, CancellationToken cancellationToken);
+    Task<CustomerTierBatchLookupResult> GetSupportTiersAsync(
+        IReadOnlyCollection<Guid> customerIds,
+        CancellationToken cancellationToken);
+}
+
+public sealed class CustomerLookupClient(HttpClient httpClient) : ICustomerLookupClient
+{
+    private static readonly JsonSerializerOptions CustomerJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public async Task<CustomerLookupResult> ExistsAsync(Guid customerId, CancellationToken cancellationToken)
     {
         try
@@ -59,12 +73,48 @@ public sealed class CustomerLookupClient(HttpClient httpClient)
         }
     }
 
-    private static readonly JsonSerializerOptions CustomerJsonOptions = new(JsonSerializerDefaults.Web)
+    public async Task<CustomerTierBatchLookupResult> GetSupportTiersAsync(
+        IReadOnlyCollection<Guid> customerIds,
+        CancellationToken cancellationToken)
     {
-        Converters = { new JsonStringEnumConverter() }
-    };
+        if (customerIds.Count is < 1 or > 500)
+        {
+            throw new ArgumentOutOfRangeException(nameof(customerIds));
+        }
 
-    private sealed record CustomerTierResponse(Guid Id, SupportTier SupportTier);
+        try
+        {
+            using var response = await httpClient.PostAsJsonAsync(
+                "customers/support-tiers",
+                new CustomerTierBatchRequest(customerIds.ToArray()),
+                CustomerJsonOptions,
+                cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return CustomerTierBatchLookupResult.Unavailable;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return CustomerTierBatchLookupResult.Unavailable;
+            }
+
+            var tiers = await response.Content.ReadFromJsonAsync<IReadOnlyList<CustomerTierResponse>>(
+                CustomerJsonOptions,
+                cancellationToken);
+            return tiers is null
+                ? CustomerTierBatchLookupResult.Unavailable
+                : CustomerTierBatchLookupResult.Success(tiers);
+        }
+        catch (HttpRequestException)
+        {
+            return CustomerTierBatchLookupResult.Unavailable;
+        }
+        catch (JsonException)
+        {
+            return CustomerTierBatchLookupResult.Unavailable;
+        }
+    }
 }
 
 public enum CustomerLookupResult
@@ -77,3 +127,18 @@ public enum CustomerLookupResult
 public sealed record CustomerTierLookupResult(
     CustomerLookupResult Status,
     SupportTier? SupportTier);
+
+public sealed record CustomerTierBatchLookupResult(
+    CustomerLookupResult Status,
+    IReadOnlyList<CustomerTierResponse> Tiers)
+{
+    public static CustomerTierBatchLookupResult Unavailable { get; } =
+        new(CustomerLookupResult.Unavailable, []);
+
+    public static CustomerTierBatchLookupResult Success(IReadOnlyList<CustomerTierResponse> tiers) =>
+        new(CustomerLookupResult.Exists, tiers);
+}
+
+public sealed record CustomerTierBatchRequest(IReadOnlyList<Guid> CustomerIds);
+
+public sealed record CustomerTierResponse(Guid CustomerId, SupportTier SupportTier);

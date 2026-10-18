@@ -4,17 +4,54 @@ namespace SupportHub.Customers.Api.Features.Customers;
 
 public static class CustomerEndpoints
 {
+    private const int MaximumTierBatchSize = 500;
+
     public static IEndpointRouteBuilder MapCustomerEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/customers").WithTags("Customers");
 
         group.MapGet("/", ListAsync);
+        group.MapPost("/support-tiers", GetSupportTiersAsync);
         group.MapGet("/{id:guid}", GetAsync);
         group.MapPost("", CreateAsync);
         group.MapPut("/{id:guid}", UpdateAsync);
         group.MapDelete("/{id:guid}", DeleteAsync);
 
         return endpoints;
+    }
+
+    private static async Task<IResult> GetSupportTiersAsync(
+        CustomerTierBatchRequest request,
+        CustomerDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (request.CustomerIds is null || request.CustomerIds.Count is < 1 or > MaximumTierBatchSize)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["customerIds"] = [$"Customer IDs must contain between 1 and {MaximumTierBatchSize} values."]
+            });
+        }
+
+        var customerIds = request.CustomerIds
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToArray();
+        if (customerIds.Length != request.CustomerIds.Count)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["customerIds"] = ["Customer IDs must be non-empty and unique."]
+            });
+        }
+
+        var tiers = await db.Customers
+            .AsNoTracking()
+            .Where(customer => customerIds.Contains(customer.Id))
+            .Select(customer => new CustomerTierResponse(customer.Id, customer.SupportTier))
+            .ToListAsync(cancellationToken);
+
+        return Results.Ok(tiers);
     }
 
     private static async Task<IResult> ListAsync(CustomerDbContext db, CancellationToken cancellationToken)

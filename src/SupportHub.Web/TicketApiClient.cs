@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace SupportHub.Web;
 
-public class TicketApiClient(HttpClient httpClient)
+public class TicketApiClient(
+    HttpClient httpClient,
+    DashboardSummaryCache dashboardCache)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -44,6 +46,30 @@ public class TicketApiClient(HttpClient httpClient)
         return await GetRequiredAsync<IReadOnlyList<TicketModel>>(path, cancellationToken);
     }
 
+    public async Task<DashboardSummaryReadModel> GetDashboardSummaryAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var cached = await dashboardCache.GetWithMetadataAsync(cancellationToken);
+        if (cached is not null)
+        {
+            return new(
+                cached.Summary,
+                IsCached: true,
+                cached.Age);
+        }
+
+        var summary = await GetRequiredAsync<DashboardSummaryModel>(
+            "tickets/dashboard-summary",
+            cancellationToken);
+        if (summary.DataQuality != DashboardDataQualityModel.Complete)
+        {
+            throw new TicketApiException("The ticket API returned an incomplete dashboard summary.");
+        }
+
+        await dashboardCache.SetAsync(summary, cancellationToken);
+        return new(summary, IsCached: false, CacheAge: TimeSpan.Zero);
+    }
+
     public async Task<TicketModel?> GetTicketAsync(Guid id, CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.GetAsync($"tickets/{id}", cancellationToken);
@@ -57,16 +83,30 @@ public class TicketApiClient(HttpClient httpClient)
             ?? throw new TicketApiException("The ticket API returned an empty response.");
     }
 
-    public Task<TicketModel> CreateTicketAsync(TicketRequestModel request, CancellationToken cancellationToken = default) =>
-        SendAsync<TicketModel>(HttpMethod.Post, "tickets", request, cancellationToken);
+    public async Task<TicketModel> CreateTicketAsync(
+        TicketRequestModel request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<TicketModel>(HttpMethod.Post, "tickets", request, cancellationToken);
+        await dashboardCache.InvalidateAsync(cancellationToken);
+        return result;
+    }
 
-    public Task<TicketModel> UpdateTicketAsync(Guid id, TicketRequestModel request, CancellationToken cancellationToken = default) =>
-        SendAsync<TicketModel>(HttpMethod.Put, $"tickets/{id}", request, cancellationToken);
+    public async Task<TicketModel> UpdateTicketAsync(
+        Guid id,
+        TicketRequestModel request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<TicketModel>(HttpMethod.Put, $"tickets/{id}", request, cancellationToken);
+        await dashboardCache.InvalidateAsync(cancellationToken);
+        return result;
+    }
 
     public async Task DeleteTicketAsync(Guid id, CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.DeleteAsync($"tickets/{id}", cancellationToken);
         await EnsureSuccessAsync(response);
+        await dashboardCache.InvalidateAsync(cancellationToken);
     }
 
     public Task<IReadOnlyList<AttachmentModel>> GetAttachmentsAsync(
@@ -247,6 +287,34 @@ public sealed record SlaStatusModel(
     TimeSpan? Remaining,
     TimeSpan? Lateness,
     string PolicyVersion);
+
+public sealed record DashboardSummaryModel(
+    DateTimeOffset EvaluatedAtUtc,
+    int TotalTickets,
+    int OpenTickets,
+    IReadOnlyList<DashboardStatusBreakdownModel> StatusBreakdown,
+    IReadOnlyList<DashboardPriorityBreakdownModel> PriorityBreakdown,
+    int AtRiskSlaTickets,
+    int BreachedSlaTickets,
+    DashboardDataQualityModel DataQuality);
+
+public sealed record DashboardSummaryReadModel(
+    DashboardSummaryModel Summary,
+    bool IsCached,
+    TimeSpan CacheAge)
+{
+    public bool IsStale =>
+        IsCached && CacheAge >= TimeSpan.FromTicks(DashboardSummaryCache.MaximumAge.Ticks / 2);
+}
+
+public sealed record DashboardStatusBreakdownModel(TicketStatusModel Status, int Count);
+
+public sealed record DashboardPriorityBreakdownModel(TicketPriorityModel Priority, int Count);
+
+public enum DashboardDataQualityModel
+{
+    Complete
+}
 
 public enum SlaStateModel
 {

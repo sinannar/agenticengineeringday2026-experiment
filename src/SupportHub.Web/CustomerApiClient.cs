@@ -6,7 +6,9 @@ using System.Text.Json.Serialization;
 
 namespace SupportHub.Web;
 
-public class CustomerApiClient(HttpClient httpClient)
+public class CustomerApiClient(
+    HttpClient httpClient,
+    DashboardSummaryCache dashboardCache)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -29,16 +31,30 @@ public class CustomerApiClient(HttpClient httpClient)
             ?? throw new CustomerApiException("The customer API returned an empty response.");
     }
 
-    public Task<CustomerModel> CreateCustomerAsync(CustomerRequestModel request, CancellationToken cancellationToken = default) =>
-        SendAsync<CustomerModel>(HttpMethod.Post, "customers", request, cancellationToken);
+    public async Task<CustomerModel> CreateCustomerAsync(
+        CustomerRequestModel request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<CustomerModel>(HttpMethod.Post, "customers", request, cancellationToken);
+        await dashboardCache.InvalidateAsync(cancellationToken);
+        return result;
+    }
 
-    public Task<CustomerModel> UpdateCustomerAsync(Guid id, CustomerRequestModel request, CancellationToken cancellationToken = default) =>
-        SendAsync<CustomerModel>(HttpMethod.Put, $"customers/{id}", request, cancellationToken);
+    public async Task<CustomerModel> UpdateCustomerAsync(
+        Guid id,
+        CustomerRequestModel request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<CustomerModel>(HttpMethod.Put, $"customers/{id}", request, cancellationToken);
+        await dashboardCache.InvalidateAsync(cancellationToken);
+        return result;
+    }
 
     public async Task DeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default)
     {
         using var response = await httpClient.DeleteAsync($"customers/{id}", cancellationToken);
         await EnsureSuccessAsync(response);
+        await dashboardCache.InvalidateAsync(cancellationToken);
     }
 
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken cancellationToken)

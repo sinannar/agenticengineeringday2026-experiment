@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\src\SupportHub.Sla.Console\SupportHub.Sla.Console.csproj" />
     <ProjectReference Include="..\..\src\SupportHub.Sla.Worker\SupportHub.Sla.Worker.csproj" />
     <ProjectReference Include="..\..\src\SupportHub.Tickets.Api\SupportHub.Tickets.Api.csproj" />
+    <ProjectReference Include="..\..\src\SupportHub.Web\SupportHub.Web.csproj" />
   </ItemGroup>
 
 </Project>

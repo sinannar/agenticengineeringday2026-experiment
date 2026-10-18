@@ -1,7 +1,7 @@
 using SupportHub.Sla.Worker;
 using Microsoft.Extensions.Options;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.Services.AddHttpClient("tickets", client =>
@@ -19,4 +19,5 @@ builder.Services
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
-host.Run();
+host.MapDefaultEndpoints();
+await host.RunAsync();

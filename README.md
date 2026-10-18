@@ -97,6 +97,39 @@ These responsibilities describe the intended architectural ownership of each pro
 - Cross-service correlation.
 - Runtime diagnostics through the Aspire Dashboard.
 
+## Operational Startup and Verification
+
+Start the distributed application from the repository root with:
+
+```bash
+aspire start --non-interactive --apphost src/SupportHub.AppHost/SupportHub.AppHost.csproj
+aspire wait webfrontend
+```
+
+The Aspire resource names used by the application are `customersapi`, `ticketsapi`,
+`activity-worker`, `sla-worker`, `webfrontend`, `cache`, `blobs`, `messaging`, and
+`cosmos`. Use `aspire describe`, `aspire logs`, `aspire otel logs`, and
+`aspire otel traces` to inspect resource health and runtime behavior.
+
+The dashboard summary is computed authoritatively by `SupportHub.Tickets.Api` through
+`GET /tickets/dashboard-summary`. The Web frontend caches successful summaries in Redis
+under `dashboard-summary:v1` for at most 30 seconds. Web-originated customer and ticket
+mutations invalidate the entry; writers outside the Web frontend may therefore leave a
+summary stale for up to the TTL. The dashboard displays whether the result is fresh or
+cached/stale, shows the evaluation time, and provides an accessible refresh action for
+stale cached data.
+
+Dashboard aggregation fails closed when the Customers API cannot provide support tiers,
+when a dependency times out, or when the ticket population exceeds 10,000 records.
+The current SLA worker scan remains bounded by its configured maximum of 50 tickets;
+the dashboard uses its own whole-population aggregation and does not rely on that scan.
+
+The implementation was verified with solution restore/build, the full automated test
+suite (83 tests), an Aspire dashboard-summary and full-journey integration test, healthy
+Aspire resources, dashboard browser verification, structured dashboard logs, and a
+correlated `dashboard.summary` trace during a live request. Existing package
+vulnerability and package-pruning warnings remain documented build warnings.
+
 ## Target Architecture
 
 The complete architecture is not created upfront. Infrastructure is introduced as requirements emerge.
