@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject TicketApiClient TicketApi
 @inject CustomerApiClient CustomerApi
+@inject NavigationManager Navigation
 @using Microsoft.AspNetCore.Components.Forms
 @using SupportHub.Web
 
@@ -59,9 +60,9 @@ else if (_ticket is not null)
                 @foreach (var attachment in _attachments)
                 {
                     <li>
-                        <a href="@TicketApiClient.GetAttachmentDownloadPath(Id, attachment.Id)">
+                        <button type="button" class="btn btn-link p-0" @onclick="() => DownloadAttachmentAsync(attachment.Id)">
                             @attachment.OriginalFileName
-                        </a>
+                        </button>
                         <span>(@FormatSize(attachment.Size), @attachment.ContentType)</span>
                         <button class="btn btn-link text-danger" @onclick="() => DeleteAttachmentAsync(attachment.Id)">
                             Delete
@@ -188,6 +189,22 @@ else if (_ticket is not null)
         {
             await TicketApi.DeleteAttachmentAsync(Id, attachmentId);
             await LoadAttachmentsAsync();
+        }
+        catch (TicketApiException exception)
+        {
+            _attachmentError = exception.Message;
+        }
+    }
+
+    private async Task DownloadAttachmentAsync(Guid attachmentId)
+    {
+        _attachmentError = null;
+        try
+        {
+            await TicketApi.EnsureAttachmentDownloadAvailableAsync(Id, attachmentId);
+            Navigation.NavigateTo(
+                TicketApiClient.GetAttachmentDownloadPath(Id, attachmentId),
+                forceLoad: true);
         }
         catch (TicketApiException exception)
         {

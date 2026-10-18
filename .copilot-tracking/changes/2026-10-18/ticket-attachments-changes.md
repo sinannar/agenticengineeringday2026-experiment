@@ -10,14 +10,16 @@
 ## Execution Status
 
 * Status: Complete
-* Declared invocation scope: full plan
-* Completed scope markers: `P01`, `P02`, `P03`, `P04`, and all tasks
-* Remaining active-plan markers: none
-* Status basis: Application behavior, deterministic failure-seam tests, distributed tests, runtime health, and browser smoke verification are complete.
+* Declared invocation scope: review findings `RV-001`, `RV-002`, and residual follow-up `RV-003`
+* Completed scope markers: Original full-plan markers remain complete; review-finding implementation is in progress.
+* Remaining active-plan markers: none; active review routes are `RV-001` and `RV-002`, with `RV-003` retained as non-blocking follow-up.
+* Status basis: The original feature implementation and accepted review routes `RV-001` and `RV-002` are complete; `RV-003` is intentionally retained as non-blocking follow-up.
 
 ## Execution Summary
 
 The approved ticket-attachment plan is being implemented as a Tickets API-owned vertical slice with PostgreSQL metadata, Azurite blob content, typed Web access, Blazor controls, focused tests, Aspire integration tests, and runtime verification.
+
+This invocation applies accepted review routes `RV-001` and `RV-002` as ordinary implementation work. `RV-003` remains a distinct non-blocking validation follow-up and is not treated as a blocker for the two source fixes.
 
 ## Completed Work
 
@@ -51,6 +53,26 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 * Added deterministic fake-store tests covering successful and failed compensation deletion plus exact operation-specific error types for upload, individual delete, and ticket-delete cleanup paths.
 * Validation: `dotnet test tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj --no-restore` passed with 26 tests.
 
+### Addressing accepted review findings (`RV-001`, `RV-002`)
+
+* Scope: Resolve orphan-cleanup error handling in rejection paths and add attachment-specific Web download failure/retry feedback.
+* Planned affected surfaces: `AttachmentEndpoints`, `AttachmentFailureHandling`, `TicketApiClient`, `SupportHub.Web/Program.cs`, `TicketDetail.razor`, focused tests, and browser/distributed validation as needed.
+* Validation intent: Re-run focused Tickets API tests, solution build, relevant AppHost tests, and Aspire/Web verification for the changed failure paths.
+* Current state: Complete and validated.
+
+### Resolving orphan cleanup and download failure feedback (`RV-001`, `RV-002`)
+
+* Related review findings: `RV-001`, `RV-002`
+* Files:
+  * [src/SupportHub.Tickets.Api/Features/Attachments/AttachmentFailureHandling.cs](../../../src/SupportHub.Tickets.Api/Features/Attachments/AttachmentFailureHandling.cs)
+  * [src/SupportHub.Tickets.Api/Features/Attachments/AttachmentEndpoints.cs](../../../src/SupportHub.Tickets.Api/Features/Attachments/AttachmentEndpoints.cs)
+  * [src/SupportHub.Tickets.Api/Features/Attachments/AttachmentStorage.cs](../../../src/SupportHub.Tickets.Api/Features/Attachments/AttachmentStorage.cs)
+  * [src/SupportHub.Web/TicketApiClient.cs](../../../src/SupportHub.Web/TicketApiClient.cs)
+  * [src/SupportHub.Web/Components/Pages/TicketDetail.razor](../../../src/SupportHub.Web/Components/Pages/TicketDetail.razor)
+  * [tests/SupportHub.Tickets.Api.Tests/AttachmentPolicyTests.cs](../../../tests/SupportHub.Tickets.Api.Tests/AttachmentPolicyTests.cs)
+* Behavior or functionality changed: Rejection-path blob cleanup now preserves cancellation and returns explicit reconciliation Problem Details when compensation fails. Attachment downloads now have a ticket-scoped content preflight and the Blazor page reports missing or unavailable content instead of navigating blindly.
+* Validation: 28 focused Tickets API tests passed; 3 distributed attachment tests passed; solution build passed; Aspire resources reached healthy state; real Azurite upload, `HEAD` preflight, and same-origin download returned successful responses. Browser automation was unavailable because the required Playwright browser binary is not installed.
+
 ## Implementation-Time Plan Updates
 
 ### Explicit implementation authorization
@@ -70,6 +92,16 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 * Why: The explicit implementation invocation authorized the work, and the final build, tests, runtime checks, and browser verification now provide the required evidence.
 * Reconciliation performed: Updated the plan handoff, changes-record status, remaining work, and review readiness consistently.
 
+### Accepted review-route implementation scope
+
+* Affected review findings: `RV-001` and `RV-002`; `RV-003` remains a distinct non-blocking follow-up.
+* What changed: Added the accepted review findings to the active implementation scope without reopening or changing the approved feature requirements.
+* Why: The standalone review accepted implementation routes for orphan-cleanup handling and Web download failure feedback.
+* Triggering evidence: `.copilot-tracking/reviews/logs/2026-10-18/ticket-attachments-review.md`, Decision History entries `RD-002` and `RD-003`.
+* User answer or decision: User accepted the suggested `rpi-implement` route for both findings and retained `RV-003` as residual work.
+* Reconciliation performed: Execution status changed to partial/in progress; original plan markers remain complete; review routes and validation intent are recorded here.
+* Planning and critique state: No replan required; this is ordinary implementation of accepted review findings.
+
 ## Business Alignment
 
 * None
@@ -79,29 +111,29 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 | Check | Scope | Status | Evidence or reason |
 |---|---|---|---|
 | `dotnet build SupportHub.slnx --no-restore` | Full solution | Passed | Build succeeded; only the existing `MessagePack` vulnerability warnings remain. |
-| `dotnet test SupportHub.slnx --no-restore` | Full solution | Passed | 40 tests passed; two existing `MessagePack` vulnerability warnings remain. |
-| `dotnet test tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj --no-restore` | Policy and failure-seam tests | Passed | 26 focused attachment tests passed. |
-| Aspire AppHost attachment integration tests | Distributed API/storage | Passed | Five filtered ticket/attachment tests passed after the failure-handling refactor. |
+| `dotnet test SupportHub.slnx --no-restore` | Full solution | Unavailable | The command produced no output within the validation budget and was stopped; prior baseline evidence recorded 40 passing tests. |
+| `dotnet test tests/SupportHub.Tickets.Api.Tests/SupportHub.Tickets.Api.Tests.csproj --no-restore` | Policy and failure-seam tests | Passed | 28 focused attachment tests passed, including rejection cleanup failure and cancellation preservation. |
+| Aspire AppHost attachment integration tests | Distributed API/storage | Passed | Three filtered lifecycle, validation, and ticket-cleanup tests passed after the review fixes. |
 | Aspire CLI `wait blobs`, `wait ticketsapi`, `wait webfrontend` | Runtime health | Passed | All affected resources reached healthy state. |
 | Aspire CLI logs for `ticketsapi` and `webfrontend` | Runtime diagnostics | Passed | Migration, Azurite container access, service discovery, and attachment requests observed without application errors. |
-| Playwright browser smoke flow | Web attachment experience | Passed | Empty state, upload, list, same-origin download, and delete verified; no browser console errors. |
+| Playwright browser smoke flow | Web attachment experience | Unavailable for this invocation | The required Playwright browser binary is not installed; prior valid-flow browser smoke evidence remains available, while this invocation verified the Web route through HTTPS HTTP checks. |
 | Direct Azurite blob enumeration/assertion | Exact container/blob test assertion | Unavailable | Existing distributed tests validate behavior through the API; direct resource-client assertions were not added. |
-| Deterministic failure-handling tests | Compensation and delete failure seams | Passed | 22 focused tests cover policy boundaries, compensation success/failure, metadata-save outcomes, and operation-specific storage error types. |
+| Deterministic failure-handling tests | Compensation and delete failure seams | Passed | 26 focused tests cover policy boundaries, compensation success/failure, metadata-save outcomes, and operation-specific storage error types. |
 
 ## Pre-Review Reconciliation
 
 * Plan markers and task-local context: `P01`, `P02`, `P03`, `P04`, and every task marker are checked.
 * Completed-work entries and handoff prose: Entries above reconcile the implemented API, Web, tests, runtime, and browser behavior.
 * Validation, blockers, remaining work, and follow-up items: Runtime, browser, distributed, and deterministic failure-seam verification passed; direct Azurite assertions remain an optional validation gap.
-* Review readiness: Ready for full-plan review; direct Azurite enumeration remains recorded as a follow-up validation gap.
+* Review readiness: Ready for review; direct Azurite enumeration remains a non-blocking follow-up, and browser automation is unavailable in this environment.
 
 ## Blockers
 
-* None currently.
+* None. The accepted review routes are implemented and validated within available checks.
 
 ## Remaining Work
 
-* Add direct Azurite container/blob assertions if the pinned Aspire test resource API is verified and the scope remains required.
+* Original plan markers remain complete. `RV-001` and `RV-002` are complete; `RV-003` remains outside the blocking implementation scope as a distinct follow-up.
 
 ## Follow-Up Items
 
@@ -111,12 +143,12 @@ The approved ticket-attachment plan is being implemented as a Tickets API-owned 
 ## Return-to-Caller State
 
 * Implementation execution status: Complete
-* Declared scope and markers: Full plan; `P01`, `P02`, `P03`, `P04`, and all task markers complete
-* Validation coverage: Full build/test suite with 40 passing tests, 26 focused attachment tests, distributed AppHost tests, Aspire health/logs, and browser smoke flow
-* Blockers: None currently
-* Current plan updates: All implementation markers checked; browser MIME propagation fix and deterministic failure-handling seam recorded
+* Declared scope and markers: `RV-001` and `RV-002` complete; original full-plan markers remain complete; `RV-003` retained as follow-up
+* Validation coverage: Solution build, 28 focused tests, 3 distributed tests, Aspire health/logs, and HTTP validation of Azurite-backed preflight/download passed; full-suite rerun unavailable due no output before timeout; browser binary unavailable
+* Blockers: None
+* Current plan updates: Accepted review-route scope completed without changing original requirements or plan markers
 * Business alignment entries: None; no BRD/PRD/ADR is cited
 * Planning and critique state: Approved; critique-6 passed
 * Follow-up items: Optional direct Azurite container/blob enumeration assertions
-* Review readiness or no-handoff reason: Ready for `/rpi-review`; no blocking implementation work remains
+* Review readiness or no-handoff reason: Ready for `/rpi-review`; browser automation and direct Azurite enumeration remain explicit evidence limitations/follow-ups
 * Continuation owner: User/manual RPI

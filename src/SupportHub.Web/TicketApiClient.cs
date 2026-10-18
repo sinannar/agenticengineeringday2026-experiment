@@ -120,6 +120,33 @@ public class TicketApiClient(HttpClient httpClient)
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
 
+    public async Task EnsureAttachmentDownloadAvailableAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await httpClient.SendAsync(
+            new HttpRequestMessage(
+                HttpMethod.Head,
+                $"tickets/{ticketId}/attachments/{attachmentId}/content"),
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var message = response.StatusCode switch
+        {
+            HttpStatusCode.NotFound => "The attachment content is missing or the attachment could not be found.",
+            HttpStatusCode.ServiceUnavailable => "The attachment storage service is unavailable. Please try again.",
+            _ => "The attachment could not be downloaded. Please try again."
+        };
+
+        throw new TicketApiException(message, response.StatusCode);
+    }
+
     public static string GetAttachmentDownloadPath(Guid ticketId, Guid attachmentId) =>
         $"/tickets/{ticketId}/attachments/{attachmentId}/download";
 

@@ -16,6 +16,7 @@ public static class AttachmentEndpoints
 
         group.MapGet("", ListAsync);
         group.MapPost("", UploadAsync);
+        group.MapMethods("/{attachmentId:guid}/content", ["HEAD"], HeadAsync);
         group.MapGet("/{attachmentId:guid}/content", DownloadAsync);
         group.MapDelete("/{attachmentId:guid}", DeleteAsync);
 
@@ -128,13 +129,19 @@ public static class AttachmentEndpoints
         }
         catch (AttachmentTooLargeException exception)
         {
-            await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
-            return AttachmentPolicy.TooLarge(exception.Message);
+            var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                blobStore,
+                blobName,
+                cancellationToken);
+            return cleanupFailure ?? AttachmentPolicy.TooLarge(exception.Message);
         }
         catch (RequestFailedException exception)
         {
-            await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
-            return AttachmentFailureHandling.StorageProblem("upload", exception);
+            var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                blobStore,
+                blobName,
+                cancellationToken);
+            return cleanupFailure ?? AttachmentFailureHandling.StorageProblem("upload", exception);
         }
 
         if (!AttachmentPolicy.TryValidate(
@@ -146,7 +153,14 @@ public static class AttachmentEndpoints
         {
             if (uploaded)
             {
-                await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+                var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                    blobStore,
+                    blobName,
+                    cancellationToken);
+                if (cleanupFailure is not null)
+                {
+                    return cleanupFailure;
+                }
             }
 
             return Results.ValidationProblem(new Dictionary<string, string[]>
@@ -161,7 +175,15 @@ public static class AttachmentEndpoints
                 string.Equals(extraDisposition.DispositionType.Value, "form-data", StringComparison.OrdinalIgnoreCase) &&
                 (extraDisposition.FileName.Value is not null || extraDisposition.FileNameStar.Value is not null))
             {
-                await AttachmentFailureHandling.TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+                var cleanupFailure = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                    blobStore,
+                    blobName,
+                    cancellationToken);
+                if (cleanupFailure is not null)
+                {
+                    return cleanupFailure;
+                }
+
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                 {
                     ["file"] = ["Only one file may be uploaded at a time."]
@@ -231,6 +253,42 @@ public static class AttachmentEndpoints
                     content.ContentType,
                     content.FileName,
                     enableRangeProcessing: true);
+        }
+        catch (RequestFailedException exception)
+        {
+            return AttachmentFailureHandling.StorageProblem("download", exception);
+        }
+    }
+
+    private static async Task<IResult> HeadAsync(
+        Guid ticketId,
+        Guid attachmentId,
+        TicketDbContext db,
+        IAttachmentBlobStore blobStore,
+        CancellationToken cancellationToken)
+    {
+        var attachment = await db.Attachments
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                x => x.TicketId == ticketId && x.Id == attachmentId,
+                cancellationToken);
+        if (attachment is null)
+        {
+            return Results.NotFound();
+        }
+
+        try
+        {
+            if (!await blobStore.ExistsAsync(attachment.BlobName, cancellationToken))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    type: "https://supporthub.dev/problems/attachment-content-missing",
+                    title: "Attachment content is missing",
+                    detail: "The attachment metadata exists but its content could not be found.");
+            }
+
+            return Results.Ok();
         }
         catch (RequestFailedException exception)
         {

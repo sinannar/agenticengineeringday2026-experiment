@@ -161,6 +161,38 @@ public class AttachmentPolicyTests
     }
 
     [Fact]
+    public async Task RejectedUploadCleanupFailureUsesReconciliationProblem()
+    {
+        var store = new FakeAttachmentBlobStore(
+            new RequestFailedException(503, "storage unavailable"));
+
+        var result = await AttachmentFailureHandling.CleanupRejectedUploadAsync(
+            store,
+            "tickets/ticket/attachment",
+            CancellationToken.None);
+
+        var problem = await ExecuteProblemAsync(result!);
+        Assert.Equal(
+            "https://supporthub.dev/problems/attachment-compensation-failed",
+            problem.Type);
+    }
+
+    [Fact]
+    public async Task RejectedUploadCleanupPreservesCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var store = new FakeAttachmentBlobStore(
+            new OperationCanceledException(cancellation.Token));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            AttachmentFailureHandling.CleanupRejectedUploadAsync(
+                store,
+                "tickets/ticket/attachment",
+                cancellation.Token));
+    }
+
+    [Fact]
     public async Task AttachmentDeleteDoesNotDeleteMetadataWhenBlobDeleteFails()
     {
         var metadataDeleted = false;
@@ -232,7 +264,7 @@ public class AttachmentPolicyTests
 
     private sealed record ProblemDetailsDocument(int StatusCode, string Type);
 
-    private sealed class FakeAttachmentBlobStore(RequestFailedException? deleteException = null)
+    private sealed class FakeAttachmentBlobStore(Exception? deleteException = null)
         : IAttachmentBlobStore
     {
         public List<string> DeletedBlobNames { get; } = [];
@@ -253,6 +285,9 @@ public class AttachmentPolicyTests
             string fileName,
             CancellationToken cancellationToken) =>
             Task.FromResult<AttachmentBlobDownload?>(null);
+
+        public Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
 
         public Task<bool> DeleteIfExistsAsync(
             string blobName,

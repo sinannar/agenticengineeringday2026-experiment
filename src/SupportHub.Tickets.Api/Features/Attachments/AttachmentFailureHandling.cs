@@ -15,10 +15,23 @@ internal static class AttachmentFailureHandling
             await blobStore.DeleteIfExistsAsync(blobName, cancellationToken);
             return null;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             return exception;
         }
+    }
+
+    public static async Task<IResult?> CleanupRejectedUploadAsync(
+        IAttachmentBlobStore blobStore,
+        string blobName,
+        CancellationToken cancellationToken)
+    {
+        var cleanupError = await TryDeleteBlobAsync(blobStore, blobName, cancellationToken);
+        return cleanupError is null ? null : MetadataSaveProblem(cleanupError);
     }
 
     public static IResult MetadataSaveProblem(Exception? cleanupError) =>

@@ -12,7 +12,7 @@
 
 * Bottom line: Add ticket-scoped attachment management as a vertical slice owned by `SupportHub.Tickets.Api`: metadata and lifecycle state in `ticketsdb`, content in the existing Azurite-backed `blobs` resource, typed C# API/client contracts, Blazor detail-page controls, and real Aspire/Azurite integration coverage.
 * Why this matters: Upload and delete span two non-transactional stores, while browser downloads cannot use server-side Aspire service-discovery URIs directly. The plan makes those boundaries, failure modes, and verification points explicit without adding a new service or later stack layer.
-* Planning result: Complete and implementation-ready after the standard critiques and user decisions; the plan defines ticket-delete cleanup, the exact blob container/provisioning rule, the same-origin Web route, executable failure-test placement, bounded multipart parsing, approved policy defaults, a reproducible browser failure stimulus, and consistent critique provenance.
+* Planning result: The approved baseline implementation and accepted review routes `RV-001` and `RV-002` are complete after validation; `RV-003` remains a non-blocking validation follow-up.
 * Confidence and uncertainty: High confidence in the repository seams, ownership, resource names, API shape, migration path, and test strategy. Malware scanning, identity authorization, resumable uploads, and automated orphan reconciliation remain outside this feature.
 
 ### What You May Not Know
@@ -742,7 +742,7 @@ Dependencies:
 
 | Field | Record |
 |-------|--------|
-| Planning execution and readiness | Complete; implementation complete and ready for review |
+| Planning execution and readiness | Complete; baseline and accepted review routes are implemented and ready for review |
 | Decision participation | user-owned; D1, D2, and D4 are confirmed user decisions |
 | Blockers | None |
 | Latest critique | [.copilot-tracking/reviews/plans/2026-10-18/ticket-attachments-plan-critique-6.md](../../reviews/plans/2026-10-18/ticket-attachments-plan-critique-6.md) with Pass verdict |
@@ -751,7 +751,7 @@ Dependencies:
 | Changes-record role | `.copilot-tracking/changes/2026-10-18/ticket-attachments-changes.md` is the implementation evidence |
 | Continuation owner | user/manual RPI |
 | Required gates or confirmations | Review should preserve the confirmed D1/D2/D4 policies, exact resource/container names, C#-only scope, and the listed tests |
-| Next action | Run `/rpi-review`; optional direct Azurite enumeration remains follow-up validation |
+| Next action | Run `/rpi-review` if a fresh post-fix review is requested; direct Azurite enumeration remains follow-up validation |
 
 ## Goals
 
@@ -872,7 +872,7 @@ Dependencies:
 * [x] Existing files use workspace-relative Markdown links; not-yet-created paths use backticks.
 * [x] Before/After and phase diagrams reuse stable nodes, prescribed Mermaid initialization, explicit colors, and dashed new nodes.
 * [x] Critique setting, status, findings, prior critique lineage, dispositions, and residual risks are recorded.
-* [x] Planning execution, readiness, continuation, gates, next action, and implementation changes-record path are recorded; implementation is complete and review-ready.
+* [x] Planning execution, readiness, continuation, gates, next action, and implementation changes-record path are recorded; the approved baseline is complete and accepted review routes are current.
 * [x] Follow-Up Items remain outside active plan completion claims.
 * Checked sections: all required plan sections.
 * Missing or limited sections: implementation-time compile/API/runtime verification remains downstream.
@@ -880,6 +880,12 @@ Dependencies:
 ## Follow-Up Items
 
 * Direct Azurite container/blob enumeration assertions remain optional follow-up validation if the pinned Aspire test resource API is verified and the scope remains required.
+
+## Accepted Review Follow-Up
+
+* `RV-001` is complete: rejection-path blob cleanup failures are explicit/reconcilable and cancellation is preserved.
+* `RV-002` is complete: the Web attachment download flow preflights content and exposes attachment-specific failure feedback.
+* `RV-003` remains the non-blocking direct Azurite enumeration follow-up and is excluded from baseline acceptance until separately implemented.
 
 ## Handoff
 

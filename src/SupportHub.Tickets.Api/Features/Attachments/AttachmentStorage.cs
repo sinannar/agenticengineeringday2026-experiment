@@ -13,6 +13,7 @@ public interface IAttachmentBlobStore
         string contentType,
         string fileName,
         CancellationToken cancellationToken);
+    Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken);
     Task<bool> DeleteIfExistsAsync(string blobName, CancellationToken cancellationToken);
 }
 
@@ -66,6 +67,14 @@ public sealed class AzureAttachmentBlobStore(BlobServiceClient blobServiceClient
         var container = blobServiceClient.GetBlobContainerClient(AttachmentPolicy.ContainerName);
         var blob = container.GetBlobClient(blobName);
         var response = await blob.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+        return response.Value;
+    }
+
+    public async Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken)
+    {
+        var container = blobServiceClient.GetBlobContainerClient(AttachmentPolicy.ContainerName);
+        var blob = container.GetBlobClient(blobName);
+        var response = await blob.ExistsAsync(cancellationToken);
         return response.Value;
     }
 }
