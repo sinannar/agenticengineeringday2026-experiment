@@ -2,6 +2,7 @@
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SupportHub.Sla.ConsoleApp;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -16,11 +17,13 @@ builder.Services.AddHttpClient("tickets", client =>
 {
     client.BaseAddress = new Uri("https+http://ticketsapi");
 });
+builder.Services.AddSingleton<SlaScanClient>();
 
 using var host = builder.Build();
 await host.StartAsync();
 
 var clients = host.Services.GetRequiredService<IHttpClientFactory>();
+var slaScanClient = host.Services.GetRequiredService<SlaScanClient>();
 
 while (true)
 {
@@ -32,6 +35,7 @@ while (true)
     Console.WriteLine("3. List tickets");
     Console.WriteLine("4. Watch service health");
     Console.WriteLine("5. Generate sample ticket data");
+    Console.WriteLine("6. Run SLA scan");
     Console.WriteLine("0. Exit");
     Console.Write("\nSelect an option: ");
 
@@ -59,6 +63,10 @@ while (true)
             GenerateSampleTickets();
             break;
 
+        case "6":
+            await RunSlaScanAsync();
+            break;
+
         case "0":
             await host.StopAsync();
             return;
@@ -66,6 +74,40 @@ while (true)
         default:
             Console.WriteLine("Invalid option.");
             break;
+    }
+
+    async Task RunSlaScanAsync()
+    {
+        try
+        {
+            var result = await slaScanClient.ScanAsync(new(MaxItems: 50), CancellationToken.None);
+            Console.WriteLine(
+                $"SLA scan at {result.EvaluatedAtUtc:O}: evaluated {result.EvaluatedCount}, failed {result.FailedCount}.");
+            Console.WriteLine(
+                $"At risk: {result.Items.Count(item => item.State == SlaState.AtRisk)}, " +
+                $"breached: {result.Items.Count(item => item.State == SlaState.Breached)}.");
+
+            foreach (var failure in result.Failures)
+            {
+                Console.WriteLine($"Failure {failure.Code} for ticket {failure.TicketId}: {failure.Message}");
+            }
+        }
+        catch (SlaScanHttpException exception)
+        {
+            Console.WriteLine($"SLA scan failed: HTTP {(int)exception.StatusCode} ({exception.StatusCode}).");
+        }
+        catch (SlaScanContractException exception)
+        {
+            Console.WriteLine($"SLA scan failed: {exception.Message}");
+        }
+        catch (HttpRequestException exception)
+        {
+            Console.WriteLine($"SLA scan unavailable: {exception.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("SLA scan cancelled.");
+        }
     }
 
     Console.WriteLine("\nPress Enter to continue...");

@@ -20,6 +20,9 @@ builder.Services.AddHttpClient<CustomerLookupClient>(client =>
 {
     client.BaseAddress = new("https+http://customersapi");
 });
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<SlaEvaluator>();
+builder.Services.AddScoped<SlaEvaluationService>();
 builder.Services.AddSingleton<IAttachmentBlobStore, AzureAttachmentBlobStore>();
 builder.Services.AddHttpClient<ActivityWorkerClient>(client =>
 {
@@ -51,6 +54,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/hello", () => "Hello World! from Tickets Api");
 
 app.MapTicketEndpoints();
+app.MapSlaEndpoints();
 app.MapOutboxMaintenanceEndpoints();
 app.MapAttachmentEndpoints();
 app.MapDefaultEndpoints();
