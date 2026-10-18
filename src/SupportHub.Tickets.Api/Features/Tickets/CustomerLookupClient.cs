@@ -5,7 +5,16 @@ using System.Text.Json.Serialization;
 
 namespace SupportHub.Tickets.Api.Features.Tickets;
 
-public sealed class CustomerLookupClient(HttpClient httpClient)
+public interface ICustomerLookupClient
+{
+    Task<CustomerLookupResult> ExistsAsync(Guid customerId, CancellationToken cancellationToken);
+    Task<CustomerTierLookupResult> GetSupportTierAsync(Guid customerId, CancellationToken cancellationToken);
+    Task<CustomerTierBatchLookupResult> GetSupportTiersAsync(
+        IReadOnlyCollection<Guid> customerIds,
+        CancellationToken cancellationToken);
+}
+
+public sealed class CustomerLookupClient(HttpClient httpClient) : ICustomerLookupClient
 {
     private static readonly JsonSerializerOptions CustomerJsonOptions = new(JsonSerializerDefaults.Web)
     {

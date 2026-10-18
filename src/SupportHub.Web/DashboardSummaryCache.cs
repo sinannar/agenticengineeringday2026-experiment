@@ -5,7 +5,7 @@ using StackExchange.Redis;
 namespace SupportHub.Web;
 
 public sealed class DashboardSummaryCache(
-    IConnectionMultiplexer redis,
+    IDashboardSummaryCacheStore store,
     ILogger<DashboardSummaryCache> logger)
 {
     public const string Key = "dashboard-summary:v1";
@@ -20,17 +20,14 @@ public sealed class DashboardSummaryCache(
     {
         try
         {
-            var value = await redis
-                .GetDatabase()
-                .StringGetAsync(Key)
-                .WaitAsync(cancellationToken);
-            if (value.IsNullOrEmpty)
+            var value = await store.GetAsync(Key, cancellationToken);
+            if (string.IsNullOrEmpty(value))
             {
                 logger.LogDebug("Dashboard summary cache miss.");
                 return null;
             }
 
-            var entry = JsonSerializer.Deserialize<DashboardSummaryCacheEntry>(value.ToString(), JsonOptions);
+            var entry = JsonSerializer.Deserialize<DashboardSummaryCacheEntry>(value, JsonOptions);
             if (entry is null || DateTimeOffset.UtcNow - entry.StoredAtUtc > MaximumAge)
             {
                 logger.LogDebug("Dashboard summary cache entry expired.");
@@ -63,13 +60,11 @@ public sealed class DashboardSummaryCache(
         try
         {
             var entry = new DashboardSummaryCacheEntry(DateTimeOffset.UtcNow, summary);
-            await redis
-                .GetDatabase()
-                .StringSetAsync(
-                    Key,
-                    JsonSerializer.Serialize(entry, JsonOptions),
-                    MaximumAge)
-                .WaitAsync(cancellationToken);
+            await store.SetAsync(
+                Key,
+                JsonSerializer.Serialize(entry, JsonOptions),
+                MaximumAge,
+                cancellationToken);
             logger.LogDebug("Dashboard summary cache entry stored.");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -86,7 +81,7 @@ public sealed class DashboardSummaryCache(
     {
         try
         {
-            await redis.GetDatabase().KeyDeleteAsync(Key).WaitAsync(cancellationToken);
+            await store.DeleteAsync(Key, cancellationToken);
             logger.LogDebug("Dashboard summary cache entry invalidated.");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -102,4 +97,30 @@ public sealed class DashboardSummaryCache(
     private sealed record DashboardSummaryCacheEntry(
         DateTimeOffset StoredAtUtc,
         DashboardSummaryModel Summary);
+}
+
+public interface IDashboardSummaryCacheStore
+{
+    Task<string?> GetAsync(string key, CancellationToken cancellationToken);
+    Task SetAsync(string key, string value, TimeSpan expiration, CancellationToken cancellationToken);
+    Task DeleteAsync(string key, CancellationToken cancellationToken);
+}
+
+public sealed class RedisDashboardSummaryCacheStore(IConnectionMultiplexer redis) : IDashboardSummaryCacheStore
+{
+    public async Task<string?> GetAsync(string key, CancellationToken cancellationToken)
+    {
+        var value = await redis.GetDatabase().StringGetAsync(key).WaitAsync(cancellationToken);
+        return value.IsNullOrEmpty ? null : value.ToString();
+    }
+
+    public async Task SetAsync(
+        string key,
+        string value,
+        TimeSpan expiration,
+        CancellationToken cancellationToken) =>
+        await redis.GetDatabase().StringSetAsync(key, value, expiration).WaitAsync(cancellationToken);
+
+    public Task DeleteAsync(string key, CancellationToken cancellationToken) =>
+        redis.GetDatabase().KeyDeleteAsync(key).WaitAsync(cancellationToken);
 }

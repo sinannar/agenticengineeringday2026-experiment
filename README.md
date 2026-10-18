@@ -122,11 +122,11 @@ when a dependency times out, or when the ticket population exceeds 10,000 record
 The current SLA worker scan remains bounded by its configured maximum of 50 tickets;
 the dashboard uses its own whole-population aggregation and does not rely on that scan.
 
-The implementation was verified with the solution build, the full automated test suite,
-an Aspire dashboard-summary integration test, healthy Aspire resources, dashboard
-browser verification, and Aspire logs showing dashboard evaluation and service-discovery
-calls. Existing package vulnerability and package-pruning warnings remain documented
-build warnings.
+The implementation was verified with solution restore/build, the full automated test
+suite (83 tests), an Aspire dashboard-summary and full-journey integration test, healthy
+Aspire resources, dashboard browser verification, structured dashboard logs, and a
+correlated `dashboard.summary` trace during a live request. Existing package
+vulnerability and package-pruning warnings remain documented build warnings.
 
 ## Target Architecture
 

@@ -5,7 +5,7 @@ namespace SupportHub.Tickets.Api.Features.Tickets;
 
 public sealed class DashboardSummaryService(
     TicketDbContext db,
-    CustomerLookupClient customers,
+    ICustomerLookupClient customers,
     SlaEvaluator evaluator,
     TimeProvider timeProvider,
     ILogger<DashboardSummaryService> logger)

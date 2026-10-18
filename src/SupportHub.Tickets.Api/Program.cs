@@ -20,6 +20,8 @@ builder.Services.AddHttpClient<CustomerLookupClient>(client =>
 {
     client.BaseAddress = new("https+http://customersapi");
 });
+builder.Services.AddTransient<ICustomerLookupClient>(services =>
+    services.GetRequiredService<CustomerLookupClient>());
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<SlaEvaluator>();
 builder.Services.AddScoped<SlaEvaluationService>();

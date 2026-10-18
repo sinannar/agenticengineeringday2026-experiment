@@ -188,7 +188,7 @@ Dependencies:
 * P01-T01.
 
 <!-- rpi:phase id=P02 -->
-### [ ] P02: Deliver the dashboard UI and bounded Redis caching
+### [x] P02: Deliver the dashboard UI and bounded Redis caching
 
 Goals:
 * Give support staff a usable dashboard with explicit loading, empty, success, stale/refreshing, and error states, while using Redis only for justified short-lived reads; a stale/refreshing presentation is never treated as an authoritative partial API snapshot.
@@ -248,7 +248,7 @@ Dependencies:
 * P01-T02.
 
 <!-- rpi:task id=P02-T02 -->
-#### [ ] P02-T02: Establish Redis TTL, freshness, and invalidation behavior
+#### [x] P02-T02: Establish Redis TTL, freshness, and invalidation behavior
 
 Goals:
 * Make cached dashboard reads fast without allowing materially stale operational results to appear authoritative.
@@ -279,7 +279,7 @@ Dependencies:
 * P02-T01.
 
 <!-- rpi:phase id=P03 -->
-### [ ] P03: Improve operational readiness and distributed diagnostics
+### [x] P03: Improve operational readiness and distributed diagnostics
 
 Goals:
 * Make dashboard dependencies and cross-service behavior diagnosable through Aspire health, structured logs, resilience signals, and distributed traces without coupling liveness to downstream availability.
@@ -334,7 +334,7 @@ Dependencies:
 * P01-T02.
 
 <!-- rpi:task id=P03-T02 -->
-#### [ ] P03-T02: Add structured dashboard diagnostics and trace correlation
+#### [x] P03-T02: Add structured dashboard diagnostics and trace correlation
 
 Goals:
 * Make one dashboard request explainable across Web, Redis, Tickets API, Customers API, and any SLA evaluation dependency.
@@ -363,7 +363,7 @@ Dependencies:
 * P02-T02.
 
 <!-- rpi:phase id=P04 -->
-### [ ] P04: Add automated distributed and browser verification
+### [x] P04: Add automated distributed and browser verification
 
 Goals:
 * Prove the summary contract, cache correctness, failure behavior, full customer-to-ticket journey, asynchronous audit behavior, attachment isolation, SLA evaluation, and dashboard UI states.
@@ -394,7 +394,7 @@ flowchart LR
 Highlighted work: add focused tests to existing projects and use Aspire resource notifications plus browser automation where practical.
 
 <!-- rpi:task id=P04-T01 -->
-#### [ ] P04-T01: Add dashboard contract, aggregation, cache, and failure tests
+#### [x] P04-T01: Add dashboard contract, aggregation, cache, and failure tests
 
 Goals:
 * Make the dashboard behavior regression-resistant at unit and service-contract level before relying on a full distributed journey.
@@ -481,7 +481,7 @@ Dependencies:
 * P04-T02.
 
 <!-- rpi:phase id=P05 -->
-### [ ] P05: Document startup, limitations, and verification evidence
+### [x] P05: Document startup, limitations, and verification evidence
 
 Goals:
 * Leave maintainers with a reproducible operational startup/checklist and an honest record of cache freshness, runtime diagnostics, known limitations, and completed verification.
@@ -541,7 +541,7 @@ Dependencies:
 * P04-T03.
 
 <!-- rpi:task id=P05-T02 -->
-#### [ ] P05-T02: Execute the final build, runtime, and observability gate
+#### [x] P05-T02: Execute the final build, runtime, and observability gate
 
 Goals:
 * Prevent handoff with an unverified distributed change by requiring reproducible build/test results and runtime evidence for the affected Aspire graph.

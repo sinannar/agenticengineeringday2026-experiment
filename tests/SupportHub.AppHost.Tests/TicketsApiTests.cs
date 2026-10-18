@@ -271,6 +271,56 @@ public class TicketsApiTests
     }
 
     [Fact]
+    public async Task DashboardAndCustomerTierContracts_CoverAllBreakdownsAndRejectInvalidBatch()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "Breakdown Customer", "breakdown@example.com");
+        foreach (var status in Enum.GetNames<TicketStatus>())
+        {
+            foreach (var priority in Enum.GetNames<TicketPriority>())
+            {
+                using var response = await ticketsClient.PostAsJsonAsync("/tickets", new
+                {
+                    title = $"{status}-{priority}",
+                    description = "Dashboard breakdown coverage.",
+                    status,
+                    priority,
+                    assignee = (string?)null,
+                    customerId = customer.Id
+                }, JsonOptions);
+                response.EnsureSuccessStatusCode();
+            }
+        }
+
+        using var invalidBatchResponse = await customersClient.PostAsJsonAsync(
+            "/customers/support-tiers",
+            new { customerIds = new[] { customer.Id, customer.Id } },
+            JsonOptions);
+        Assert.Equal(HttpStatusCode.BadRequest, invalidBatchResponse.StatusCode);
+
+        using var dashboardResponse = await ticketsClient.GetAsync("/tickets/dashboard-summary");
+        dashboardResponse.EnsureSuccessStatusCode();
+        var dashboard = await dashboardResponse.Content.ReadFromJsonAsync<DashboardSummaryResponse>(JsonOptions);
+
+        Assert.NotNull(dashboard);
+        Assert.All(Enum.GetValues<TicketStatus>(), status =>
+            Assert.Contains(dashboard!.StatusBreakdown, item => item.Status == status && item.Count > 0));
+        Assert.All(Enum.GetValues<TicketPriority>(), priority =>
+            Assert.Contains(dashboard!.PriorityBreakdown, item => item.Priority == priority && item.Count > 0));
+        Assert.Equal(dashboard.StatusBreakdown.Sum(item => item.Count), dashboard.TotalTickets);
+        Assert.Equal(dashboard.PriorityBreakdown.Sum(item => item.Count), dashboard.TotalTickets);
+    }
+
+    [Fact]
     public async Task TicketChanges_AreAvailableThroughActivityHistory()
     {
         ConfigureTestEnvironment();
