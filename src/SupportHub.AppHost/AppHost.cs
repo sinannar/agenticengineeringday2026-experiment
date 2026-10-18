@@ -11,8 +11,22 @@ var builder = DistributedApplication.CreateBuilder(args);
 var cache = builder.AddRedis("cache");
 
 // PostgreSQL - transactional databases
-var postgres = builder.AddPostgres("postgres");
-if (!builder.Configuration.GetValue<bool>("SUPPORTHUB_TEST_MODE"))
+var persistenceTestMode = builder.Configuration.GetValue<bool>("SUPPORTHUB_PERSISTENCE_TEST_MODE");
+var postgresPassword = persistenceTestMode
+    ? builder.AddParameter("supporthub-persistence-test-postgres-password", secret: true)
+    : null;
+var postgres = postgresPassword is null
+    ? builder.AddPostgres("postgres")
+    : builder.AddPostgres("postgres", password: postgresPassword);
+
+if (persistenceTestMode)
+{
+    var volumeName = builder.Configuration["SUPPORTHUB_PERSISTENCE_TEST_VOLUME_NAME"]
+        ?? throw new InvalidOperationException(
+            "SUPPORTHUB_PERSISTENCE_TEST_VOLUME_NAME is required when persistence test mode is enabled.");
+    postgres.WithDataVolume(volumeName);
+}
+else if (!builder.Configuration.GetValue<bool>("SUPPORTHUB_TEST_MODE"))
 {
     postgres.WithDataVolume();
 }
@@ -58,12 +72,19 @@ if (builder.Environment.IsDevelopment())
 var ticketsapi = builder
     .AddProject<Projects.SupportHub_Tickets_Api>("ticketsapi")
     .WithReference(ticketsDb)
+    .WithReference(customersapi)
     .WithReference(blobs)
     .WithReference(serviceBus)
     .WaitFor(ticketsDb)
+    .WaitFor(customersapi)
     .WaitFor(blobs)
     .WaitFor(serviceBus)
     .WithHttpHealthCheck("/health");
+
+if (builder.Environment.IsDevelopment())
+{
+    ticketsapi.WithEnvironment("SUPPORTHUB_APPLY_MIGRATIONS", "true");
+}
 
 // ============================================================
 // Background Workers

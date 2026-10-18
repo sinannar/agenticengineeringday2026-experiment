@@ -1,0 +1,184 @@
+@page "/tickets/new"
+@page "/tickets/{Id:guid}/edit"
+@rendermode InteractiveServer
+@inject TicketApiClient TicketApi
+@inject CustomerApiClient CustomerApi
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsNew ? "Add ticket" : "Edit ticket")</PageTitle>
+
+<h1>@(IsNew ? "Add ticket" : "Edit ticket")</h1>
+
+@if (_loading)
+{
+    <p role="status">Loading ticket...</p>
+}
+else if (_notFound)
+{
+    <div class="alert alert-warning" role="alert">Ticket not found.</div>
+    <a href="tickets">Back to tickets</a>
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger" role="alert">@_error</div>
+        }
+        <div class="mb-3">
+            <label class="form-label" for="ticket-title">Title</label>
+            <InputText id="ticket-title" class="form-control" @bind-Value="_model.Title" />
+            <ValidationMessage For="@(() => _model.Title)" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="ticket-description">Description</label>
+            <InputTextArea id="ticket-description" class="form-control" @bind-Value="_model.Description" />
+            <ValidationMessage For="@(() => _model.Description)" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="ticket-customer">Customer</label>
+            <InputSelect id="ticket-customer" class="form-select" @bind-Value="_model.CustomerId">
+                <option value="@Guid.Empty">Select a customer</option>
+                @foreach (var customer in _customers)
+                {
+                    <option value="@customer.Id">@customer.Name</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => _model.CustomerId)" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="ticket-status">Status</label>
+            <InputSelect id="ticket-status" class="form-select" @bind-Value="_model.Status">
+                @foreach (var status in Enum.GetValues<TicketStatusModel>())
+                {
+                    <option value="@status">@status</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="ticket-priority">Priority</label>
+            <InputSelect id="ticket-priority" class="form-select" @bind-Value="_model.Priority">
+                @foreach (var priority in Enum.GetValues<TicketPriorityModel>())
+                {
+                    <option value="@priority">@priority</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="ticket-assignee">Assignee</label>
+            <InputText id="ticket-assignee" class="form-control" @bind-Value="_model.Assignee" />
+            <ValidationMessage For="@(() => _model.Assignee)" />
+        </div>
+        <button class="btn btn-primary" type="submit" disabled="@_saving">Save</button>
+        <a class="btn btn-link" href="tickets">Cancel</a>
+        @if (!IsNew)
+        {
+            <button class="btn btn-outline-danger ms-2" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete</button>
+        }
+    </EditForm>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private TicketRequestModel _model = new();
+    private IReadOnlyList<CustomerModel> _customers = [];
+    private bool _loading;
+    private bool _saving;
+    private bool _notFound;
+    private string? _error;
+    private bool IsNew => Id is null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _notFound = false;
+        _error = null;
+        _loading = true;
+        try
+        {
+            _customers = await CustomerApi.GetCustomersAsync();
+            if (IsNew)
+            {
+                _model = new();
+                return;
+            }
+
+            var ticket = await TicketApi.GetTicketAsync(Id!.Value);
+            if (ticket is null)
+            {
+                _notFound = true;
+            }
+            else
+            {
+                _model = new TicketRequestModel
+                {
+                    Title = ticket.Title,
+                    Description = ticket.Description,
+                    Status = ticket.Status,
+                    Priority = ticket.Priority,
+                    Assignee = ticket.Assignee,
+                    CustomerId = ticket.CustomerId
+                };
+            }
+        }
+        catch (TicketApiException exception)
+        {
+            _error = exception.Message;
+        }
+        catch (CustomerApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            if (IsNew)
+            {
+                var ticket = await TicketApi.CreateTicketAsync(_model);
+                Navigation.NavigateTo($"tickets/{ticket.Id}");
+            }
+            else
+            {
+                await TicketApi.UpdateTicketAsync(Id!.Value, _model);
+                Navigation.NavigateTo($"tickets/{Id!.Value}");
+            }
+        }
+        catch (TicketApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            await TicketApi.DeleteTicketAsync(Id!.Value);
+            Navigation.NavigateTo("tickets");
+        }
+        catch (TicketApiException exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
