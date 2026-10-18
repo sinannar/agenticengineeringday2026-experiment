@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SupportHub.ServiceDefaults\SupportHub.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\SupportHub.Presentation\SupportHub.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

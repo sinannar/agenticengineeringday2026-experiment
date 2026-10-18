@@ -1,0 +1,19 @@
+<div class="empty-state" role="@Role">
+    <div class="empty-state-mark" aria-hidden="true">@Icon</div>
+    <div>
+        <h2>@Title</h2>
+        <p>@Description</p>
+        @if (ChildContent is not null)
+        {
+            <div class="empty-state-action">@ChildContent</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = "i";
+    [Parameter] public string Role { get; set; } = "status";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

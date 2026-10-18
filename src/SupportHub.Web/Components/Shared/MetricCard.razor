@@ -1,14 +1,15 @@
-<div class="col-sm-6 col-xl-3">
-    <div class="card h-100 border-@Tone">
-        <div class="card-body">
-            <h2 class="h6 text-muted">@Title</h2>
-            <p class="display-6 mb-0">@Value</p>
-        </div>
-    </div>
+<div class="metric-card metric-@Tone">
+    <p class="metric-label">@Title</p>
+    <p class="metric-value">@Value</p>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <p class="metric-description">@Description</p>
+    }
 </div>
 
 @code {
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
     [Parameter] public int Value { get; set; }
     [Parameter] public string Tone { get; set; } = "secondary";
+    [Parameter] public string? Description { get; set; }
 }

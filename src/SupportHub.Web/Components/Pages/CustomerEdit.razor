@@ -6,55 +6,67 @@
 
 <PageTitle>@(IsNew ? "Add customer" : "Edit customer")</PageTitle>
 
-<h1>@(IsNew ? "Add customer" : "Edit customer")</h1>
+<PageHeader Title="@(IsNew ? "Add customer" : "Edit customer")" Eyebrow="Customer profile"
+            Lede="Keep the account details that support staff need close at hand." />
 
 @if (_loading)
 {
-    <p role="status">Loading customer...</p>
+    <div class="state-panel" role="status">Loading customer...</div>
 }
 else if (_notFound)
 {
-    <div class="alert alert-warning" role="alert">Customer not found.</div>
-    <a href="customers">Back to customers</a>
+    <EmptyState Title="Customer not found" Description="This customer may have been removed or the link may be out of date." Icon="?">
+        <a class="button button-secondary" href="customers">Back to customers</a>
+    </EmptyState>
 }
 else
 {
-    <EditForm Model="_model" OnValidSubmit="SaveAsync">
-        <DataAnnotationsValidator />
-        @if (_error is not null)
-        {
-            <div class="alert alert-danger" role="alert">@_error</div>
-        }
-        <div class="mb-3">
-            <label class="form-label" for="customer-name">Name</label>
-            <InputText id="customer-name" class="form-control" @bind-Value="_model.Name" />
-            <ValidationMessage For="@(() => _model.Name)" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="customer-email">Email</label>
-            <InputText id="customer-email" type="email" class="form-control" @bind-Value="_model.Email" />
-            <ValidationMessage For="@(() => _model.Email)" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="customer-phone">Phone number</label>
-            <InputText id="customer-phone" class="form-control" @bind-Value="_model.PhoneNumber" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="customer-tier">Support tier</label>
-            <InputSelect id="customer-tier" class="form-select" @bind-Value="_model.SupportTier">
-                @foreach (var tier in Enum.GetValues<SupportTierModel>())
+    <SectionCard Heading="Account details" Description="Fields marked as required must be completed before saving.">
+        <EditForm Model="_model" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            @if (_error is not null)
+            {
+                <InlineError Message="@_error" />
+            }
+            <ValidationSummary />
+            <div class="form-grid">
+                <div>
+                    <label class="form-label" for="customer-name">Name</label>
+                    <InputText id="customer-name" class="form-control" @bind-Value="_model.Name" />
+                    <ValidationMessage For="@(() => _model.Name)" />
+                </div>
+                <div>
+                    <label class="form-label" for="customer-email">Email</label>
+                    <InputText id="customer-email" type="email" class="form-control" @bind-Value="_model.Email" />
+                    <ValidationMessage For="@(() => _model.Email)" />
+                </div>
+                <div>
+                    <label class="form-label" for="customer-phone">Phone number <span class="optional-label">(optional)</span></label>
+                    <InputText id="customer-phone" class="form-control" @bind-Value="_model.PhoneNumber" />
+                </div>
+                <div>
+                    <label class="form-label" for="customer-tier">Support tier</label>
+                    <InputSelect id="customer-tier" class="form-select" @bind-Value="_model.SupportTier">
+                        @foreach (var tier in Enum.GetValues<SupportTierModel>())
+                        {
+                            <option value="@tier">@SupportHubVocabulary.SupportTier(tier.ToString())</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button button-primary" type="submit" disabled="@_saving">@(IsNew ? "Create customer" : "Save changes")</button>
+                <a class="button button-secondary" href="customers">Cancel</a>
+                @if (!IsNew)
                 {
-                    <option value="@tier">@tier</option>
+                    <ConfirmAction Label="Delete customer"
+                                   Prompt="Delete this customer and its support history?"
+                                   IsBusy="_saving"
+                                   OnConfirm="DeleteAsync" />
                 }
-            </InputSelect>
-        </div>
-        <button class="btn btn-primary" type="submit" disabled="@_saving">Save</button>
-        <a class="btn btn-link" href="customers">Cancel</a>
-        @if (!IsNew)
-        {
-            <button class="btn btn-outline-danger ms-2" type="button" @onclick="DeleteAsync" disabled="@_saving">Delete</button>
-        }
-    </EditForm>
+            </div>
+        </EditForm>
+    </SectionCard>
 }
 
 @code {

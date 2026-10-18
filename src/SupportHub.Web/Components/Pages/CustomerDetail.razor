@@ -10,29 +10,41 @@
 }
 else if (_notFound)
 {
-    <div class="alert alert-warning" role="alert">Customer not found.</div>
-    <a href="customers">Back to customers</a>
+    <EmptyState Title="Customer not found" Description="This customer may have been removed or the link may be out of date." Icon="?">
+        <a class="button button-secondary" href="customers">Back to customers</a>
+    </EmptyState>
 }
 else if (_error is not null)
 {
-    <div class="alert alert-danger" role="alert">@_error</div>
-    <a href="customers">Back to customers</a>
+    <InlineError Message="@_error">
+        <a class="button button-secondary" href="customers">Back to customers</a>
+    </InlineError>
 }
 else if (_customer is not null)
 {
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>@_customer.Name</h1>
-        <a class="btn btn-primary" href="@($"customers/{_customer.Id}/edit")">Edit</a>
+    <PageHeader Title="@_customer.Name" Eyebrow="Customer profile"
+                Lede="@_customer.Email">
+        <Actions>
+            <a class="button button-primary" href="@($"customers/{_customer.Id}/edit")">Edit customer</a>
+        </Actions>
+    </PageHeader>
+    <div class="detail-grid">
+        <SectionCard Heading="Contact details" Description="Information used by the support team.">
+            <dl class="detail-list">
+                <dt>Email</dt>
+                <dd><a href="mailto:@_customer.Email">@_customer.Email</a></dd>
+                <dt>Phone</dt>
+                <dd>@(_customer.PhoneNumber ?? "Not provided")</dd>
+            </dl>
+        </SectionCard>
+        <SectionCard Heading="Support coverage" Description="The account's service level.">
+            <div class="profile-highlight">
+                <StatusBadge Label="@SupportHubVocabulary.SupportTier(_customer.SupportTier.ToString())" Tone="@TierTone(_customer.SupportTier)" />
+                <p>Use this tier when prioritizing service-level expectations for associated tickets.</p>
+            </div>
+        </SectionCard>
     </div>
-    <dl class="row">
-        <dt class="col-sm-3">Email</dt>
-        <dd class="col-sm-9">@_customer.Email</dd>
-        <dt class="col-sm-3">Phone</dt>
-        <dd class="col-sm-9">@(_customer.PhoneNumber ?? "—")</dd>
-        <dt class="col-sm-3">Support tier</dt>
-        <dd class="col-sm-9">@_customer.SupportTier</dd>
-    </dl>
-    <a href="customers">Back to customers</a>
+    <a class="back-link" href="customers">← Back to customers</a>
 }
 
 @code {
@@ -42,6 +54,14 @@ else if (_customer is not null)
     private bool _loading = true;
     private bool _notFound;
     private string? _error;
+
+    private static string TierTone(SupportTierModel tier) =>
+        tier switch
+        {
+            SupportTierModel.Enterprise => "info",
+            SupportTierModel.Premium => "success",
+            _ => "neutral"
+        };
 
     protected override async Task OnParametersSetAsync()
     {

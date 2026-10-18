@@ -5,13 +5,14 @@
 
 <PageTitle>Tickets</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Tickets</h1>
-    <a class="btn btn-primary" href="tickets/new">Add ticket</a>
-</div>
+<PageHeader Title="Tickets" Eyebrow="Work queue"
+            Lede="Scan active conversations, prioritize risk, and open the next piece of work.">
+    <Actions>
+        <a class="button button-primary" href="tickets/new">Add ticket</a>
+    </Actions>
+</PageHeader>
 
-<div class="card mb-3">
-    <div class="card-body">
+<SectionCard Heading="Filter the queue" Description="Use the existing ticket filters to narrow the work list.">
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label" for="ticket-status-filter">Status</label>
@@ -19,7 +20,7 @@
                     <option value="">All statuses</option>
                     @foreach (var status in Enum.GetValues<TicketStatusModel>())
                     {
-                        <option value="@status">@status</option>
+                        <option value="@status">@SupportHubVocabulary.TicketStatus(status.ToString())</option>
                     }
                 </InputSelect>
             </div>
@@ -29,7 +30,7 @@
                     <option value="">All priorities</option>
                     @foreach (var priority in Enum.GetValues<TicketPriorityModel>())
                     {
-                        <option value="@priority">@priority</option>
+                        <option value="@priority">@SupportHubVocabulary.TicketPriority(priority.ToString())</option>
                     }
                 </InputSelect>
             </div>
@@ -48,51 +49,61 @@
                 <InputText id="ticket-assignee-filter" class="form-control" @bind-Value="_assignee" />
             </div>
         </div>
-        <button class="btn btn-secondary mt-3" @onclick="LoadTicketsAsync" disabled="@_loading">Apply filters</button>
-    </div>
-</div>
+        <button class="button button-secondary mt-3" @onclick="LoadTicketsAsync" disabled="@_loading">Apply filters</button>
+</SectionCard>
 
 @if (_loading)
 {
-    <p role="status">Loading tickets...</p>
+    <div class="state-panel mt-4" role="status">Loading tickets...</div>
 }
 else if (_error is not null)
 {
-    <div class="alert alert-danger" role="alert">@_error</div>
-    <button class="btn btn-secondary" @onclick="LoadTicketsAsync">Retry</button>
+    <div class="mt-4">
+        <InlineError Message="@_error">
+            <button class="button button-primary" @onclick="LoadTicketsAsync">Try again</button>
+        </InlineError>
+    </div>
 }
 else if (_tickets.Count == 0)
 {
-    <div class="alert alert-info">No tickets found.</div>
+    <div class="mt-4">
+        <EmptyState Title="No tickets match these filters" Description="Try a broader search or create a new ticket." Icon="⌕">
+            <a class="button button-primary" href="tickets/new">Create a ticket</a>
+        </EmptyState>
+    </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped">
+    <div class="mt-4">
+    <SectionCard Heading="@($"{_tickets.Count} tickets")" Description="Select a ticket to view its operational details.">
+        <div class="table-responsive">
+        <table class="table table-striped data-table">
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Assignee</th>
-                    <th></th>
+                    <th scope="col">Ticket</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col">Assignee</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var ticket in _tickets)
                 {
                     <tr>
-                        <td><a href="@($"tickets/{ticket.Id}")">@ticket.Title</a></td>
+                        <th scope="row"><a class="table-primary-link" href="@($"tickets/{ticket.Id}")">@ticket.Title</a></th>
                         <td>@CustomerName(ticket.CustomerId)</td>
-                        <td>@ticket.Status</td>
-                        <td>@ticket.Priority</td>
+                        <td><StatusBadge Label="@SupportHubVocabulary.TicketStatus(ticket.Status.ToString())" Tone="@StatusTone(ticket.Status)" /></td>
+                        <td><StatusBadge Label="@SupportHubVocabulary.TicketPriority(ticket.Priority.ToString())" Tone="@PriorityTone(ticket.Priority)" /></td>
                         <td>@(ticket.Assignee ?? "—")</td>
                         <td><a class="btn btn-sm btn-outline-secondary" href="@($"tickets/{ticket.Id}/edit")">Edit</a></td>
                     </tr>
                 }
             </tbody>
         </table>
+        </div>
+    </SectionCard>
     </div>
 }
 
@@ -105,6 +116,22 @@ else
     private string? _assignee;
     private bool _loading = true;
     private string? _error;
+
+    private static string StatusTone(TicketStatusModel status) =>
+        status switch
+        {
+            TicketStatusModel.Resolved or TicketStatusModel.Closed => "success",
+            TicketStatusModel.InProgress or TicketStatusModel.Open => "info",
+            _ => "neutral"
+        };
+
+    private static string PriorityTone(TicketPriorityModel priority) =>
+        priority switch
+        {
+            TicketPriorityModel.High => "danger",
+            TicketPriorityModel.Medium => "warning",
+            _ => "neutral"
+        };
 
     protected override async Task OnInitializedAsync()
     {

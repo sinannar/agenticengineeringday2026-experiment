@@ -1,0 +1,120 @@
+- generic [ref=f1e2]:
+  - complementary "Primary navigation" [ref=f1e3]:
+    - link "SupportHub overview" [ref=f1e5] [cursor=pointer]:
+      - /url: ""
+      - generic [aria-hidden] [ref=f1e6]: S
+      - generic [ref=f1e7]:
+        - generic [ref=f1e8]: SupportHub
+        - generic [ref=f1e9]: Operations cockpit
+    - navigation "SupportHub" [ref=f1e10]:
+      - paragraph [ref=f1e11]: Workspace
+      - link "Overview" [ref=f1e12] [cursor=pointer]:
+        - /url: ""
+        - generic [aria-hidden] [ref=f1e13]: ⌂
+      - link "Tickets" [ref=f1e15] [cursor=pointer]:
+        - /url: tickets
+        - generic [aria-hidden] [ref=f1e16]: "#"
+      - link "Customers" [ref=f1e18] [cursor=pointer]:
+        - /url: customers
+        - generic [aria-hidden] [ref=f1e19]: ◎
+    - generic [ref=f1e23]:
+      - strong [ref=f1e24]: Workspace online
+      - generic [ref=f1e25]: Connected to SupportHub services
+  - main [ref=f1e26]:
+    - generic [ref=f1e27]:
+      - generic [ref=f1e28]:
+        - paragraph [ref=f1e29]: Support operations
+        - paragraph [ref=f1e30]: Resolve customer issues with confidence.
+      - link "New ticket" [ref=f1e31] [cursor=pointer]:
+        - /url: tickets/new
+    - article [ref=f1e32]:
+      - generic [ref=f1e120]:
+        - generic [ref=f1e121]:
+          - paragraph [ref=f1e122]: People and accounts
+          - heading "Customers" [level=1] [ref=f1e123]
+          - paragraph [ref=f1e124]: Find the account behind each support conversation and keep contact details current.
+        - link "Add customer" [ref=f1e126] [cursor=pointer]:
+          - /url: customers/new
+      - region [ref=f1e127]:
+        - generic [ref=f1e129]:
+          - heading "7 customer records" [level=2] [ref=f1e130]
+          - paragraph [ref=f1e131]: Select a customer to review contact information and support tier.
+        - table [ref=f1e134]:
+          - rowgroup [ref=f1e135]:
+            - row [ref=f1e136]:
+              - columnheader "Customer" [ref=f1e137]
+              - columnheader "Email" [ref=f1e138]
+              - columnheader "Phone" [ref=f1e139]
+              - columnheader "Support tier" [ref=f1e140]
+              - columnheader "Actions" [ref=f1e141]
+          - rowgroup [ref=f1e143]:
+            - row [ref=f1e144]:
+              - rowheader [ref=f1e145]:
+                - link "Attachment Review Customer" [ref=f1e146] [cursor=pointer]:
+                  - /url: customers/a51ec1ad-a015-4d0b-af18-b860d551ceca
+              - cell "attachment-review@example.com" [ref=f1e147]
+              - cell "—" [ref=f1e148]
+              - cell "Standard" [ref=f1e149]
+              - cell [ref=f1e151]:
+                - link "Edit" [ref=f1e152] [cursor=pointer]:
+                  - /url: customers/a51ec1ad-a015-4d0b-af18-b860d551ceca/edit
+            - row [ref=f1e153]:
+              - rowheader [ref=f1e154]:
+                - link "Runtime Activity" [ref=f1e155] [cursor=pointer]:
+                  - /url: customers/40e1f248-cdf1-45d1-8f23-8b224bdb3b6b
+              - cell "runtime-293C3300-4B8E-4D28-ACBC-D7540DBB66FF@example.com" [ref=f1e156]
+              - cell "—" [ref=f1e157]
+              - cell "Standard" [ref=f1e158]
+              - cell [ref=f1e160]:
+                - link "Edit" [ref=f1e161] [cursor=pointer]:
+                  - /url: customers/40e1f248-cdf1-45d1-8f23-8b224bdb3b6b/edit
+            - row [ref=f1e162]:
+              - rowheader [ref=f1e163]:
+                - link "Runtime Activity 2" [ref=f1e164] [cursor=pointer]:
+                  - /url: customers/e806003c-d208-42ba-ac18-dac9cfb2e125
+              - cell "runtime2@example.com" [ref=f1e165]
+              - cell "—" [ref=f1e166]
+              - cell "Standard" [ref=f1e167]
+              - cell [ref=f1e169]:
+                - link "Edit" [ref=f1e170] [cursor=pointer]:
+                  - /url: customers/e806003c-d208-42ba-ac18-dac9cfb2e125/edit
+            - row [ref=f1e171]:
+              - rowheader [ref=f1e172]:
+                - link "Runtime Activity 3" [ref=f1e173] [cursor=pointer]:
+                  - /url: customers/e07f7008-f4cd-4d48-97dc-06ecc9701e6b
+              - cell "runtime3@example.com" [ref=f1e174]
+              - cell "—" [ref=f1e175]
+              - cell "Standard" [ref=f1e176]
+              - cell [ref=f1e178]:
+                - link "Edit" [ref=f1e179] [cursor=pointer]:
+                  - /url: customers/e07f7008-f4cd-4d48-97dc-06ecc9701e6b/edit
+            - row [ref=f1e180]:
+              - rowheader [ref=f1e181]:
+                - link "Runtime Activity 4" [ref=f1e182] [cursor=pointer]:
+                  - /url: customers/0b2fec9e-2b44-400c-bc13-27d1b3235d5a
+              - cell "runtime4@example.com" [ref=f1e183]
+              - cell "—" [ref=f1e184]
+              - cell "Standard" [ref=f1e185]
+              - cell [ref=f1e187]:
+                - link "Edit" [ref=f1e188] [cursor=pointer]:
+                  - /url: customers/0b2fec9e-2b44-400c-bc13-27d1b3235d5a/edit
+            - row [ref=f1e189]:
+              - rowheader [ref=f1e190]:
+                - link "Runtime Activity 5" [ref=f1e191] [cursor=pointer]:
+                  - /url: customers/66a1b890-c069-4013-bee6-69daaba5867e
+              - cell "runtime5@example.com" [ref=f1e192]
+              - cell "—" [ref=f1e193]
+              - cell "Standard" [ref=f1e194]
+              - cell [ref=f1e196]:
+                - link "Edit" [ref=f1e197] [cursor=pointer]:
+                  - /url: customers/66a1b890-c069-4013-bee6-69daaba5867e/edit
+            - row [ref=f1e198]:
+              - rowheader [ref=f1e199]:
+                - link "Toffee" [ref=f1e200] [cursor=pointer]:
+                  - /url: customers/033d6d28-36ea-466b-abdf-ce479292773b
+              - cell "toffee@email.com" [ref=f1e201]
+              - cell "000" [ref=f1e202]
+              - cell "Standard" [ref=f1e203]
+              - cell [ref=f1e205]:
+                - link "Edit" [ref=f1e206] [cursor=pointer]:
+                  - /url: customers/033d6d28-36ea-466b-abdf-ce479292773b/edit

@@ -4,59 +4,57 @@
 
 <PageTitle>Support dashboard</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Support dashboard</h1>
-    @if (_dashboard is not null)
-    {
-        <small class="text-muted" aria-label="Dashboard freshness">
-            @FreshnessLabel
-        </small>
-    }
-</div>
+<PageHeader Title="Overview" Eyebrow="Support workspace"
+            Lede="A focused view of the work that needs attention across your queue.">
+    <Actions>
+        @if (_dashboard is not null)
+        {
+            <span class="freshness-label" aria-label="Dashboard freshness">@FreshnessLabel</span>
+        }
+    </Actions>
+</PageHeader>
 
 @if (_loading && _dashboard is null)
 {
-    <p role="status">Loading dashboard metrics...</p>
+    <div class="state-panel" role="status">Loading overview metrics...</div>
 }
 else if (_error is not null)
 {
-    <div class="alert alert-danger" role="alert">@_error</div>
-    <button class="btn btn-secondary" @onclick="LoadAsync">Retry</button>
+    <InlineError Message="@_error">
+        <button class="button button-primary" @onclick="LoadAsync">Try again</button>
+    </InlineError>
 }
 else if (_dashboard is null || _dashboard.Summary.TotalTickets == 0)
 {
-    <div class="alert alert-info" role="status">
-        No tickets are available yet. Create a ticket to populate the dashboard.
-    </div>
+    <EmptyState Title="Your queue is clear" Description="No tickets are available yet. Create a ticket to populate the overview." Icon="✓">
+        <a class="button button-primary" href="tickets/new">Create a ticket</a>
+    </EmptyState>
 }
 else
 {
     @if (_loading)
     {
-        <p role="status">Refreshing dashboard metrics...</p>
+        <div class="state-panel" role="status">Refreshing overview metrics...</div>
     }
 
     @if (_dashboard.IsStale)
     {
-        <div class="alert alert-warning" role="status">
-            Dashboard data is cached and may be stale. Last evaluated
-            @_dashboard.Summary.EvaluatedAtUtc.ToLocalTime().ToString("g").
-            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="LoadAsync">
-                Refresh
-            </button>
+        <div class="state-panel state-panel-warning mb-4" role="status">
+            <strong>Cached overview</strong>
+            <span>Last evaluated @(_dashboard.Summary.EvaluatedAtUtc.ToLocalTime().ToString("g")).</span>
+            <button class="button button-secondary" @onclick="LoadAsync">Refresh</button>
         </div>
     }
 
-    <div class="row g-3 mb-4">
-        <MetricCard Title="Open tickets" Value="@_dashboard.Summary.OpenTickets" Tone="primary" />
-        <MetricCard Title="At-risk SLAs" Value="@_dashboard.Summary.AtRiskSlaTickets" Tone="warning" />
-        <MetricCard Title="Breached SLAs" Value="@_dashboard.Summary.BreachedSlaTickets" Tone="danger" />
-        <MetricCard Title="Total tickets" Value="@_dashboard.Summary.TotalTickets" Tone="secondary" />
+    <div class="metric-grid mb-4">
+        <MetricCard Title="Open tickets" Value="@_dashboard.Summary.OpenTickets" Tone="primary" Description="Active work in the queue" />
+        <MetricCard Title="At-risk SLAs" Value="@_dashboard.Summary.AtRiskSlaTickets" Tone="warning" Description="Needs attention soon" />
+        <MetricCard Title="Breached SLAs" Value="@_dashboard.Summary.BreachedSlaTickets" Tone="danger" Description="Past the target window" />
+        <MetricCard Title="Total tickets" Value="@_dashboard.Summary.TotalTickets" Tone="secondary" Description="All tracked tickets" />
     </div>
 
-    <div class="row g-4">
-        <section class="col-md-6" aria-labelledby="status-heading">
-            <h2 id="status-heading">Tickets by status</h2>
+    <div class="dashboard-grid">
+        <SectionCard Heading="Tickets by status" Description="Current workload across the ticket lifecycle." HeadingId="status-heading">
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -65,14 +63,16 @@ else
                     <tbody>
                         @foreach (var item in _dashboard.Summary.StatusBreakdown)
                         {
-                            <tr><th scope="row">@item.Status</th><td>@item.Count</td></tr>
+                            <tr>
+                                <th scope="row">@SupportHubVocabulary.TicketStatus(item.Status.ToString())</th>
+                                <td>@item.Count</td>
+                            </tr>
                         }
                     </tbody>
                 </table>
             </div>
-        </section>
-        <section class="col-md-6" aria-labelledby="priority-heading">
-            <h2 id="priority-heading">Tickets by priority</h2>
+        </SectionCard>
+        <SectionCard Heading="Tickets by priority" Description="Where urgency is concentrated." HeadingId="priority-heading">
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -81,12 +81,15 @@ else
                     <tbody>
                         @foreach (var item in _dashboard.Summary.PriorityBreakdown)
                         {
-                            <tr><th scope="row">@item.Priority</th><td>@item.Count</td></tr>
+                            <tr>
+                                <th scope="row">@SupportHubVocabulary.TicketPriority(item.Priority.ToString())</th>
+                                <td>@item.Count</td>
+                            </tr>
                         }
                     </tbody>
                 </table>
             </div>
-        </section>
+        </SectionCard>
     </div>
 }
 
