@@ -54,12 +54,34 @@ flowchart LR
 
 | Phase | Outcome | Status |
 |-------|---------|--------|
-| P01 | Versioned event contracts and transactional outbox foundation are defined and persisted with ticket changes. | [ ] |
-| P02 | Outbox rows are dispatched to `ticket-events` with retry state and observable at-least-once publication. | [ ] |
-| P03 | Activity Worker consumes, validates, deduplicates, and persists immutable activity documents in Cosmos. | [ ] |
-| P04 | Activity history is exposed through backend APIs with exact Aspire service wiring. | [ ] |
-| P05 | Web loads and renders the activity timeline through `TicketApiClient`. | [ ] |
-| P06 | Unit, integration, end-to-end, and Aspire runtime evidence prove behavior and failure handling. | [ ] |
+| P01 | Versioned event contracts and transactional outbox foundation are defined and persisted with ticket changes. | [x] |
+| P02 | Outbox rows are dispatched to `ticket-events` with retry state and observable at-least-once publication. | [x] |
+| P03 | Activity Worker consumes, validates, deduplicates, and persists immutable activity documents in Cosmos. | [x] |
+| P04 | Activity history is exposed through backend APIs with exact Aspire service wiring. | [x] |
+| P05 | Web loads and renders the activity timeline through `TicketApiClient`. | [x] |
+| P06 | Unit, integration, end-to-end, and Aspire runtime evidence prove behavior and failure handling. | [x] |
+
+### Implementation Task Status
+
+| Marker | Status | Evidence |
+|--------|--------|----------|
+| `P01-T01` | [x] | Shared versioned contracts and serialized-shape tests |
+| `P01-T02` | [x] | EF outbox model and generated migration |
+| `P01-T03` | [x] | Atomic create/update outbox enlistment and integration flow |
+| `P02-T01` | [x] | Tickets API hosted dispatcher and broker metadata |
+| `P02-T02` | [x] | Bounded retry, terminal state, exponential backoff |
+| `P02-T03` | [x] | Claim recovery, published retention cleanup, terminal/replay routes |
+| `P03-T01` | [x] | Cosmos `ticket-activity` container and Activity Worker document model |
+| `P03-T02` | [x] | Peek-lock processor, completion, abandon, and dead-letter paths |
+| `P03-T03` | [x] | Conflict-safe create and bounded partition history query |
+| `P04-T00` | [x] | Hybrid `WebApplication` host validated through build and Aspire health |
+| `P04-T01` | [x] | Activity Worker `/internal/activity/{ticketId}` endpoint |
+| `P04-T02` | [x] | Tickets API proxy, service discovery reference, existence check |
+| `P05-T01` | [x] | Typed `TicketApiClient` activity contracts |
+| `P05-T02` | [x] | Ticket detail loading, empty/error/loading states, timeline rendering |
+| `P06-T01` | [x] | Contract unit tests and replay/idempotency integration coverage |
+| `P06-T02` | [x] | Aspire event-to-history and duplicate replay test |
+| `P06-T03` | [x] | Full build, targeted tests, Aspire health/log evidence, browser snapshot |
 
 ### P01 Highlighted After
 

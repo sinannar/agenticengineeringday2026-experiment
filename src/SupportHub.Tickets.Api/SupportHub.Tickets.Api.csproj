@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SupportHub.ServiceDefaults\SupportHub.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\SupportHub.Activity.Contracts\SupportHub.Activity.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -89,6 +89,33 @@ else if (_ticket is not null)
             <div class="alert alert-danger mt-2" role="alert">@_attachmentError</div>
         }
     </section>
+    <section aria-labelledby="activity-heading" class="mt-4">
+        <h2 id="activity-heading">Activity history</h2>
+        @if (_activityLoading)
+        {
+            <p role="status">Loading activity...</p>
+        }
+        else if (_activityError is not null)
+        {
+            <div class="alert alert-danger" role="alert">@_activityError</div>
+        }
+        else if (_activity.Count == 0)
+        {
+            <p>No activity has been processed yet.</p>
+        }
+        else
+        {
+            <ol>
+                @foreach (var item in _activity)
+                {
+                    <li>
+                        <strong>@FormatEventType(item.EventType)</strong>
+                        <span> — @item.OccurredAtUtc</span>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
     <a href="tickets">Back to tickets</a>
 }
 
@@ -105,6 +132,9 @@ else if (_ticket is not null)
     private bool _uploading;
     private int _uploadProgress;
     private string? _attachmentError;
+    private IReadOnlyList<ActivityHistoryModel> _activity = [];
+    private bool _activityLoading;
+    private string? _activityError;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -120,6 +150,7 @@ else if (_ticket is not null)
                 var customer = await CustomerApi.GetCustomerAsync(_ticket.CustomerId);
                 _customerName = customer?.Name ?? "Customer unavailable";
                 await LoadAttachmentsAsync();
+                await LoadActivityAsync();
             }
         }
         catch (TicketApiException exception)
@@ -133,6 +164,24 @@ else if (_ticket is not null)
         finally
         {
             _loading = false;
+        }
+    }
+
+    private async Task LoadActivityAsync()
+    {
+        _activityLoading = true;
+        _activityError = null;
+        try
+        {
+            _activity = (await TicketApi.GetActivityAsync(Id)).Items;
+        }
+        catch (TicketApiException exception)
+        {
+            _activityError = exception.Message;
+        }
+        finally
+        {
+            _activityLoading = false;
         }
     }
 
@@ -216,4 +265,8 @@ else if (_ticket is not null)
         size >= 1024 * 1024
             ? $"{size / 1024d / 1024d:0.##} MiB"
             : $"{Math.Max(1, size / 1024d):0.##} KiB";
+
+    private static string FormatEventType(string eventType) =>
+        eventType.Replace("ticket.", string.Empty, StringComparison.Ordinal)
+            .Replace("-", " ", StringComparison.Ordinal);
 }

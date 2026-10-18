@@ -110,6 +110,73 @@ public class TicketsApiTests
     }
 
     [Fact]
+    public async Task TicketChanges_AreAvailableThroughActivityHistory()
+    {
+        ConfigureTestEnvironment();
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.SupportHub_AppHost>();
+        await using var app = await builder.BuildAsync();
+        await app.StartAsync();
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("customersapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("ticketsapi");
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("activity-worker");
+        var customersClient = app.CreateHttpClient("customersapi");
+        var ticketsClient = app.CreateHttpClient("ticketsapi");
+
+        var customer = await CreateCustomerAsync(customersClient, "Activity Customer", "activity@example.com");
+        var ticket = await CreateTicketAsync(ticketsClient, customer.Id, "Activity ticket");
+
+        using var updateResponse = await ticketsClient.PutAsJsonAsync($"/tickets/{ticket.Id}", new
+        {
+            title = "Activity ticket updated",
+            description = "Updated for activity testing.",
+            status = "Resolved",
+            priority = "High",
+            assignee = "Ada",
+            customerId = customer.Id
+        }, JsonOptions);
+        updateResponse.EnsureSuccessStatusCode();
+
+        ActivityHistoryResponse? history = null;
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            using var response = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/activity");
+            if (response.IsSuccessStatusCode)
+            {
+                history = await response.Content.ReadFromJsonAsync<ActivityHistoryResponse>(JsonOptions);
+                if (history?.Items.Count >= 4)
+                {
+                    break;
+                }
+            }
+
+            await Task.Delay(500);
+        }
+
+        Assert.NotNull(history);
+        Assert.Contains(history!.Items, item => item.EventType == "ticket.created");
+        Assert.Contains(history.Items, item => item.EventType == "ticket.updated");
+        Assert.Contains(history.Items, item => item.EventType == "ticket.status-changed");
+        Assert.Contains(history.Items, item => item.EventType == "ticket.assignment-changed");
+
+        foreach (var item in history.Items)
+        {
+            using var replayResponse = await ticketsClient.PostAsync(
+                $"/internal/outbox/{item.Id}/replay",
+                content: null);
+            Assert.Equal(HttpStatusCode.Accepted, replayResponse.StatusCode);
+        }
+
+        await Task.Delay(3_000);
+        using var duplicateHistoryResponse = await ticketsClient.GetAsync($"/tickets/{ticket.Id}/activity");
+        duplicateHistoryResponse.EnsureSuccessStatusCode();
+        var duplicateHistory =
+            await duplicateHistoryResponse.Content.ReadFromJsonAsync<ActivityHistoryResponse>(JsonOptions);
+        Assert.Equal(4, duplicateHistory!.Items.Count);
+    }
+
+    [Fact]
     public async Task TicketsApi_ManagesAttachmentLifecycleAndIsolation()
     {
         ConfigureTestEnvironment();
@@ -311,6 +378,18 @@ public sealed record AttachmentResponse(
     string ContentType,
     long Size,
     DateTimeOffset CreatedAt);
+
+public sealed record ActivityHistoryResponse(
+    Guid TicketId,
+    IReadOnlyList<ActivityHistoryItem> Items);
+
+public sealed record ActivityHistoryItem(
+    Guid Id,
+    string EventType,
+    Guid TicketId,
+    DateTimeOffset OccurredAtUtc,
+    string? Actor,
+    JsonElement Details);
 
 public enum TicketStatus
 {
