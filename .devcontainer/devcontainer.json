@@ -1,0 +1,65 @@
+
+{
+  "name": "Agentic Engineering Workshop",
+  "image": "mcr.microsoft.com/dotnet/sdk:10.0",
+  "features": {
+    "ghcr.io/microsoft/aspire-devcontainer-feature/aspire:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [
+    5161,
+    7274,
+    15058,
+    17119,
+    5521,
+    7507,
+    5522,
+    7508
+  ],
+  "portsAttributes": {
+    "5161": {
+      "label": "SupportHub Web (HTTP)"
+    },
+    "7274": {
+      "label": "SupportHub Web (HTTPS)"
+    },
+    "15058": {
+      "label": "Aspire Dashboard (HTTP)"
+    },
+    "17119": {
+      "label": "Aspire Dashboard (HTTPS)"
+    },
+    "5521": {
+      "label": "Customers API (HTTP)"
+    },
+    "7507": {
+      "label": "Customers API (HTTPS)"
+    },
+    "5522": {
+      "label": "Tickets API (HTTP)"
+    },
+    "7508": {
+      "label": "Tickets API (HTTPS)"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "microsoft-aspire.aspire-vscode",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "ise-hve-essentials.hve-core",
+        "github.vscode-pull-request-github",
+        "github.vscode-github-actions",
+        "ms-azuretools.vscode-containers"
+      ]
+    }
+  },
+  "postCreateCommand": "bash -lc 'set -e; npm install --global @github/copilot; gh extension install github/gh-stack; copilot plugin marketplace add microsoft/hve-core; copilot plugin install hve-core@hve-core'"
+}
